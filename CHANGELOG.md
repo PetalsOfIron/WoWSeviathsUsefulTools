@@ -1,5 +1,8 @@
 # SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
 
+## 1.20.2-mop
+- Mount pages: "Show on map" pins the vendor, boss, quest giver or instance entrance
+
 ## 1.20.1-mop
 - Spots show only on zone maps (close view); the continent and world view stays clean (setting "Also on continent maps")
 

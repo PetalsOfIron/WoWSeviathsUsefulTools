@@ -181,7 +181,7 @@ local function mountHowTo(cx, e)
     local d = SFP.MountData and SFP.MountData[e.spellID]
     if not d or not d.f then return nil end
     local c = cx.CYAN or "|cff33e6ff"
-    local steps = {}
+    local steps, pin = {}, nil
     local function step(text) steps[#steps + 1] = #steps + 1 .. ". " .. text end
     local out = {}
     if e.collected ~= nil then out[#out + 1] = e.collected and "|cff40ff40You have this mount|r" or "|cffff7070You do not have this mount yet|r" end
@@ -200,6 +200,7 @@ local function mountHowTo(cx, e)
         local top = d.d[1]
         local ent = SFP.InstanceEntranceByArea and SFP:InstanceEntranceByArea(top[3])
         local zone = area(top[3])
+        pin = pin or (ent and { m = ent.map, x = ent.x, y = ent.y }) or (SFP.NpcPin and SFP:NpcPin(top[2], top[3]))
         if ent then
             step("Go to the entrance of |cffffd24a" .. ent.name .. "|r: " .. SFP:ZoneName(ent.map) .. (" %.1f, %.1f"):format(ent.x * 100, ent.y * 100) .. ".")
             step("Enter the instance (the Dungeon Journal shows its bosses and which difficulty drops the mount).")
@@ -214,6 +215,7 @@ local function mountHowTo(cx, e)
     -- vendors
     if d.v and #d.v > 0 then
         for _, x in ipairs(d.v) do
+            pin = pin or (SFP.NpcPin and SFP:NpcPin(x[2], x[3]))
             step("Go to |cffffd24a" .. x[1] .. "|r - " .. npcWhere(x[2], x[3]) .. ".")
             local cost = costText(x[4])
             step("Buy the mount" .. (cost and (" for " .. cost) or "") .. ".")
@@ -228,6 +230,7 @@ local function mountHowTo(cx, e)
     -- quests
     if d.q and #d.q > 0 then
         local q = d.q[1]
+        pin = pin or (SFP.QuestPin and SFP:QuestPin(q[2]))
         step("Complete the quest |cffffd24a" .. q[1] .. "|r" .. (q[3] and q[3] > 0 and (" (" .. (area(q[3]) or "") .. ")") or "") .. ". The mount is its reward.")
         step("Search the quest in the Quests section of the Codex for where to pick it up and how to do it.")
     end
@@ -261,6 +264,7 @@ local function mountHowTo(cx, e)
             elseif sm.z and not sm.t and (not d.d or #d.d == 0) then
                 local ent = SFP.InstanceEntranceByArea and SFP:InstanceEntranceByArea(sm.z)
                 if ent then
+                    pin = pin or { m = ent.map, x = ent.x, y = ent.y }
                     step("Go to the entrance of |cffffd24a" .. ent.name .. "|r: " .. SFP:ZoneName(ent.map) .. (" %.1f, %.1f"):format(ent.x * 100, ent.y * 100) .. ".")
                     step("Kill the bosses there until the mount drops (see the Bosses section for the instance, and the weekly lockout).")
                 elseif area(sm.z) then
@@ -280,6 +284,7 @@ local function mountHowTo(cx, e)
         else step("Wowhead lists no drop or vendor for it. Use the link below for comments and guides.") end
     end
     out[#out + 1] = table.concat(steps, "\n")
+    if pin and not e.map then e.map = pin end
     if #req > 0 then out[#out + 1] = "\n" .. c .. "Requirements|r\n" .. table.concat(req, "\n") end
     if d.item then out[#out + 1] = "\n|cff808080Item: " .. SFP:ItemName(d.item) .. "|r" end
     return table.concat(out, "\n")
@@ -309,6 +314,7 @@ local function staticMountHowTo(cx, e)
             for _, id in ipairs(inst.items or {}) do
                 if id == itemID then
                     local ent = SFP:FindEntrance(inst)
+                    if ent and not e.map then e.map = { m = ent.map, x = ent.x, y = ent.y } end
                     step("Go to the entrance of |cffffd24a" .. inst.name .. "|r" .. (ent and (": " .. SFP:ZoneName(ent.map) .. (" %.1f, %.1f"):format(ent.x * 100, ent.y * 100)) or (" in " .. SFP:ZoneName(inst.map))) .. ".")
                     step("Kill " .. (info.note or "the boss") .. (info.drop and (" - drop chance " .. info.drop) or "") .. " and loot the " .. e.name .. ".")
                     step(inst.kind == "raid" and "Raids lock you out for a week: repeat each week." or "Heroic dungeons reset daily: repeat for another chance.")
@@ -321,6 +327,7 @@ local function staticMountHowTo(cx, e)
         for _, sp in ipairs(list) do
             for _, id in ipairs(sp.items or {}) do
                 if id == itemID and sp.hx then
+                    if not e.map then e.map = { m = mapID, x = sp.hx, y = sp.hy } end
                     step("Go to |cffffd24a" .. SFP:ZoneName(mapID) .. "|r " .. ("%.1f, %.1f"):format(sp.hx * 100, sp.hy * 100) .. " and find |cffffd24a" .. sp.name .. "|r.")
                     if sp.note then step(sp.note) end
                     step("Kill it and loot the " .. e.name .. (info.drop and (" (drop chance " .. info.drop .. ")") or "") .. ".")

@@ -68,6 +68,21 @@ local function uiSpot(spawns)
     end
 end
 
+-- { m, x, y } of an npc, preferring the given area
+function SFP:NpcPin(npcID, areaID)
+    local _, N = dbs()
+    local sp = N and npcID and safe(N.spawns, npcID)
+    if type(sp) ~= "table" then return nil end
+    return uiSpot((areaID and sp[areaID]) and { [areaID] = sp[areaID] } or sp)
+end
+
+function SFP:QuestPin(questID)
+    local Q = dbs()
+    local sb = Q and safe(Q.startedBy, questID)
+    local npc = sb and sb[1] and sb[1][1]
+    return npc and self:NpcPin(npc) or nil
+end
+
 local function firstSpot(spawns)
     if type(spawns) ~= "table" then return nil end
     for area, coords in pairs(spawns) do
