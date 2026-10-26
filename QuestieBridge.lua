@@ -320,7 +320,7 @@ function SFP:FeedDungeons(cx)
         })
     end
     -- bosses point to the entrance of their instance
-    for _, b in ipairs(cx.byCat.boss or {}) do
+    for _, b in ipairs((cx.byCat and cx.byCat.boss) or {}) do
         if not b.map and b.instKey then
             local inst = cx:Get(b.instKey)
             if inst and inst.map then b.map = inst.map end

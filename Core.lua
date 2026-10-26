@@ -694,6 +694,11 @@ SlashCmdList["SEVIATHSUSEFULTOOLS"] = function(msg)
         else
             SFP:Print("Usage: /sfp min <gold>   (0 = light every farm zone)")
         end
+    elseif cmd == "scanitems" then
+        if SFP.ScanProgress then
+            local pct, mats = SFP:ScanProgress()
+            SFP:Print(("Item scan: %d%% of the item IDs asked, %d crafting materials known."):format(pct, mats))
+        end
     elseif cmd == "questie" then
         if SFP.QuestieOwnIcons then SFP:QuestieOwnIcons() end
     elseif cmd == "menu" then

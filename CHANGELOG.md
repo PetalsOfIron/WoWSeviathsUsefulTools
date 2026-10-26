@@ -1,5 +1,20 @@
 # SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
 
+## 1.20.0-mop
+- Spots: exact markers for every spawn point (setting "Exact spot markers"); the same spots on the
+  minimap through HereBeDragons (works with Leatrix, BasicMinimap, Questie)
+- Questie: its minimap icons and objectives were switched off by the Blizzard icon theme; the addon
+  switches them on once (/sfp questie does it again, also a button in Settings)
+- Codex: every monster, quest starter, dungeon and raid has a "Show on map" pin; dungeon entrances
+  come from Questie's database when the Adventure Guide has none
+- Materials: all 1,242 crafting materials of the game with what they are used for (recipes from the
+  game's data tables, build 5.5.4.70579) and where to get them (Wowhead Mists of Pandaria Classic)
+- Mounts: all 527 mounts with the teaching item; numbered "how to get it" steps (instance entrance,
+  boss and drop chance, vendor and cost, quest, achievement, container, crafting)
+- Item scanner: the addon slowly asks the game about every item ID in the background and keeps every
+  tradeskill material it finds (/sfp scanitems)
+- Fixed the main menu close button
+
 ## 1.19.0-mop
 - Fixed: the Codex stayed empty because an unknown event (QUEST_DATA_LOAD_RESULT) stopped its
   indexer file from loading; all event registrations are now safe. Errors anywhere in the addon are

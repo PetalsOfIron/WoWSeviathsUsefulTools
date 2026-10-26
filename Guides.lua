@@ -121,7 +121,7 @@ local function materialBody(e)
     if SFP.QuestieItemSources then
         for _, s in ipairs(SFP:QuestieItemSources(id) or {}) do get[#get + 1] = s end
     end
-    if #get == 0 then get[#get + 1] = "Buy it on the auction house, or look at the Wowhead link for every source." end
+    if #get == 0 then get[#get + 1] = d.f and "No drop, node or vendor is listed for it: buy it on the auction house or check the Wowhead link." or "Sources are still being collected for this item - try the auction house or the Wowhead link." end
     add("Where to get it", table.concat(get, "\n"))
 
     local p = SFP:GetPrice(id)
@@ -140,7 +140,6 @@ function SFP:FeedMaterials(cx)
                 bodyFn = materialBody, wh = "item=" .. id, tags = "material reagent mats crafting " .. (SUB[d.s or 0] or ""),
             })
             n = n + 1
-            if n % 100 == 0 and cx.Yield then cx:Yield() end
         end
     end
 end
@@ -178,7 +177,7 @@ end
 
 local function mountHowTo(cx, e)
     local d = SFP.MountData and SFP.MountData[e.spellID]
-    if not d then return nil end
+    if not d or not d.f then return nil end
     local c = cx.CYAN or "|cff33e6ff"
     local steps = {}
     local function step(text) steps[#steps + 1] = #steps + 1 .. ". " .. text end
