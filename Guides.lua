@@ -162,6 +162,8 @@ end
 
 local function costText(cost)
     if type(cost) ~= "table" then return nil end
+    -- a vendor can list several ways to pay: {{copper, {{currency, n}}, {{item, n}}}, ...}
+    if type(cost[1]) == "table" then cost = cost[1] end
     local parts = {}
     if money(cost[1]) then parts[#parts + 1] = money(cost[1]) end
     for _, cu in ipairs(cost[2] or {}) do
@@ -239,21 +241,35 @@ local function mountHowTo(cx, e)
     end
     if d.cb and #d.cb > 0 then step("Craft it: " .. d.cb[1][1] .. " (learn the profession recipe first).") end
     if d.pick and #d.pick > 0 then step("Pickpocket " .. d.pick[1][1] .. " (rogues only).") end
-    if d.fish and #d.fish > 0 then step("Fish in " .. d.fish[1][1] .. " and hope for the mount.") end
 
-    -- achievements
+    -- the source list of the item: t = 1 npc, 5 quest, 6 spell / profession, 10 achievement
+    local seenSm = {}
     for _, sm in ipairs(d.sourcemore or {}) do
-        if sm.ti and (sm.n or sm.t == 4) then
-            local name = sm.n or (GetAchievementInfo and select(2, GetAchievementInfo(sm.ti)))
-            step("Earn the achievement |cffffd24a" .. (name or ("#" .. sm.ti)) .. "|r. The mount is its reward.")
-            local ach = name and cx.FindByName and cx:FindByName("achievement", name)
-            if ach and cx.AchievementHowTo then
-                steps[#steps + 1] = (cx:AchievementHowTo(ach):gsub("^\n+", ""))
+        local key = (sm.t or 0) .. ":" .. (sm.ti or sm.z or 0)
+        if not seenSm[key] then
+            seenSm[key] = true
+            if sm.t == 10 and sm.n then
+                step("Earn the achievement |cffffd24a" .. sm.n .. "|r. The mount is its reward.")
+                local ach = cx.FindByName and cx:FindByName("achievement", sm.n)
+                if ach and cx.AchievementHowTo then
+                    steps[#steps + 1] = (cx:AchievementHowTo(ach):gsub("^\n+", ""))
+                end
+            elseif sm.t == 5 and sm.n and not (d.q and #d.q > 0) then
+                step("Complete the quest |cffffd24a" .. sm.n .. "|r" .. (sm.c and (" (" .. (area(sm.c) or "") .. ")") or "") .. ". The mount is its reward.")
+            elseif sm.t == 6 and sm.n then
+                step("Craft it with |cffffd24a" .. sm.n .. "|r" .. (SKILL[sm.s] and (" (" .. SKILL[sm.s] .. ")") or "") .. ": learn the recipe, gather the materials and craft it.")
+            elseif sm.z and not sm.t and (not d.d or #d.d == 0) then
+                local ent = SFP.InstanceEntranceByArea and SFP:InstanceEntranceByArea(sm.z)
+                if ent then
+                    step("Go to the entrance of |cffffd24a" .. ent.name .. "|r: " .. SFP:ZoneName(ent.map) .. (" %.1f, %.1f"):format(ent.x * 100, ent.y * 100) .. ".")
+                    step("Kill the bosses there until the mount drops (see the Bosses section for the instance, and the weekly lockout).")
+                elseif area(sm.z) then
+                    step("Look in " .. area(sm.z) .. ".")
+                end
             end
-        elseif sm.z and (not d.d or #d.d == 0) then
-            step("Look in " .. (area(sm.z) or ("zone " .. sm.z)) .. ".")
         end
     end
+    if #steps == 0 and d.fish and #d.fish > 0 then step("Fish in " .. d.fish[1][1] .. " and hope for the mount.") end
     -- anything left
     if #steps == 0 then
         local code = d.source and d.source[1]
