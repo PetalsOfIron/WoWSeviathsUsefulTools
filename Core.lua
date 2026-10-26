@@ -67,6 +67,7 @@ local defaults = {
     showGatherList = true, -- side list on zone maps: the expansion's ores/herbs + their best zone
     showUnconfirmed = true, -- possible BoEs from guides that may have changed (listed separately)
     learn        = true,   -- remember where you loot farm materials / BoEs and show those spots
+    continentSpots = false, -- spots on continent / world maps (off: only on zone maps)
     exactSpots   = true,   -- one exact marker per spawn point instead of merged areas
     minimapSpots = true,   -- farm spots / rares / nodes on the minimap too
     npcs         = {},     -- [npcID] = learned monster (Collector.lua)

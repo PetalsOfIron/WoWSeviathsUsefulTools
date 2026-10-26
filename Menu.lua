@@ -109,7 +109,7 @@ local function buildFarm(pane)
         { "showHunter", "Hunter tames" }, { "showMining", "Mining zones" }, { "showHerbs", "Herb zones" },
         { "showDungeons", "Dungeon entrances" }, { "showRaids", "Raid entrances" }, { "showSpecial", "Special materials" },
         { "showGatherList", "Gathering list" }, { "showLabels", "Names on the map" }, { "learn", "Learn farm spots from my loot" },
-        { "exactSpots", "Exact spot markers (not areas)" }, { "minimapSpots", "Also show spots on the minimap" },
+        { "exactSpots", "Exact spot markers (not areas)" }, { "continentSpots", "Also on continent maps (crowded)" }, { "minimapSpots", "Also show spots on the minimap" },
     }
     pane.checks = {}
     for i, c in ipairs(checks) do

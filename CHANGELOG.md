@@ -1,5 +1,8 @@
 # SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
 
+## 1.20.1-mop
+- Spots show only on zone maps (close view); the continent and world view stays clean (setting "Also on continent maps")
+
 ## 1.20.0-mop
 - Spots: exact markers for every spawn point (setting "Exact spot markers"); the same spots on the
   minimap through HereBeDragons (works with Leatrix, BasicMinimap, Questie)

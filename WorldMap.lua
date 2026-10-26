@@ -1106,8 +1106,11 @@ refresh = function()
         end
     else
         -- continent / bigger map: small spots at the farm locations
-        if SFP.db.showSpawns or SFP.db.showRares or SFP.db.showHunter or SFP.db.showSpecial then drawContinentSpots(mapID) end
-        if SFP.db.showMining or SFP.db.showHerbs then drawGatherContinent(mapID) end
+        -- spots only on the zone maps (close view); the continent / world view stays clean
+        if SFP.db.continentSpots then
+            if SFP.db.showSpawns or SFP.db.showRares or SFP.db.showHunter or SFP.db.showSpecial then drawContinentSpots(mapID) end
+            if SFP.db.showMining or SFP.db.showHerbs then drawGatherContinent(mapID) end
+        end
         if SFP.db.zoneFill then
             for zoneID in pairs(SFP.zoneByMap) do
                 if SFP:IsValuableZone(zoneID) and isUnder(zoneID, mapID) then drawZoneFill(mapID, zoneID) end
