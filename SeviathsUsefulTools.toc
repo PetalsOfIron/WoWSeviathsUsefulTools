@@ -1,0 +1,61 @@
+## Interface: 50504
+## Title: |cff00e5ffSeviaths|rUsefulTools
+## Notes: Glowing farm spots and rare spawns on the world map for in-demand creature loot (cloth, leather, elements, BoE gear, mounts, pets), plus mining/herbalism best zones, dungeon/raid mounts and hunter tames with AH prices and Wowhead links. Classic to Mists of Pandaria (Mists of Pandaria Classic edition). Includes the Codex, Dungeons & Raids and Guild Helper.
+## Author: Seviath
+## Version: 1.19.0-mop
+## X-Formerly: SeviathsFarmPack
+## Category: Professions
+## IconTexture: Interface\Icons\INV_Misc_Map_01
+## OptionalDeps: Questie, QuestieDB, Auctionator
+## SavedVariables: SeviathsUsefulToolsDB, SeviathsCodexDB, SeviathsDungeonsRaidsDB, SeviathsGuildHelperDB
+## SavedVariablesPerCharacter: SeviathsGuildHelperCharDB
+## AddonCompartmentFunc: SeviathsUsefulTools_OnCompartmentClick
+## AddonCompartmentFuncOnEnter: SeviathsUsefulTools_OnCompartmentEnter
+## AddonCompartmentFuncOnLeave: SeviathsUsefulTools_OnCompartmentLeave
+## X-Website: https://www.curseforge.com/wow/addons/seviathsfarmpack
+## X-License: CC BY-NC 3.0
+## X-Data-Source: wowhead.com
+
+Core.lua
+Data\Items.lua
+Data\Expansions.lua
+Data\Spawns.lua
+Data\Rares.lua
+Data\Gathering.lua
+Data\GatherZones.lua
+Auction.lua
+Instances.lua
+Learn.lua
+Collector.lua
+QuestieBridge.lua
+MinimapPins.lua
+Scanner.lua
+WorldMap.lua
+MapMenu.lua
+Guides.lua
+Minimap.lua
+Browser.lua
+About.lua
+Modules\GuildHelper\GuildHelper.lua
+Modules\DungeonsRaids\Core.lua
+Modules\DungeonsRaids\Data.lua
+Modules\DungeonsRaids\History.lua
+Modules\DungeonsRaids\Collect.lua
+Modules\DungeonsRaids\Listing.lua
+Modules\DungeonsRaids\Apply.lua
+Modules\DungeonsRaids\Leader.lua
+Modules\DungeonsRaids\UI.lua
+Modules\Codex\Core.lua
+Modules\Codex\Guide.lua
+Modules\Codex\Special.lua
+Modules\Codex\Indexers.lua
+Modules\Codex\Quests.lua
+Modules\Codex\AchievementTips.lua
+Modules\Codex\Explain.lua
+Modules\Codex\Farming.lua
+Modules\Codex\Materials.lua
+Modules\Codex\Vendors.lua
+Modules\Codex\UI.lua
+Modules\Codex\Hooks.lua
+Hub.lua
+Menu.lua

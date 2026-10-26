@@ -1,0 +1,226 @@
+# SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
+
+## 1.19.0-mop
+- Fixed: the Codex stayed empty because an unknown event (QUEST_DATA_LOAD_RESULT) stopped its
+  indexer file from loading; all event registrations are now safe. Errors anywhere in the addon are
+  caught, shown once through the normal error handler and listed with /sfp errors
+- One main menu (/sut, /sfp, left or right click on the minimap button) with Home, Farm & Map,
+  Guides (Codex), Groups, Guild, Learned data, Settings
+- Collector: learns monsters (by NPC ID, names are never overwritten), what they drop (green items
+  too), skinning, gathering nodes, every item you loot, and the recipes of the professions you open.
+  Saved account-wide, so new characters start with it. Materials you loot join the farm list
+- Tooltips: monsters show what they drop; items show vendor junk / crafting material (what it is used
+  for and what it makes) / gear (compared with what you wear); Briarthorn and Mageroyal list
+  Swiftthistle, the Northrend herbs list Deadnettle
+- Questie database bridge (QuestieDB): every quest with how to do it, every elite / rare monster, who
+  drops or sells an item; rares from the database appear as orange spots on the world map
+
+## 1.18.0-mop
+- Renamed to SeviathsUsefulTools (the folder is now AddOns/SeviathsUsefulTools; /sfp, /farmpack and the new /sut all work)
+- Everything in one addon: Seviath's Codex, Seviath's Dungeons & Raids and Seviath's Guild Helper
+  are now part of the Farm Pack (Modules/ folder). One minimap button: left-click the farm browser,
+  right-click a menu with the Codex, Dungeons & Raids, Guild Helper and the map overlay switch.
+  /sfp codex, /sfp groups and /sfp guild open them too (/codex, /sdr and /gi still work)
+- Codex: guide rewritten for Mists of Pandaria (no delves, Great Vault, Warband, housing...), gold
+  farms for Pandaria, Draenor monsters commented out, the Farm Pack's rares and world bosses now
+  appear in the Codex with map pins
+- Dungeons & Raids: Mists raid buffs (Stats, Stamina, Attack Power, Spell Power, Haste, Crit,
+  Mastery), Conqueror / Protector / Vanquisher tokens, Mists classes, battle res and Bloodlust
+- Guild Helper: Mists classes only, falls back to old APIs where the new ones are missing
+- Old features that don't exist in Mists (delves, transmog sets window, Mythic+) are left out
+
+## 1.17.0-mop
+- Mists of Pandaria Classic edition (Interface 50504): data for Warlords of Draenor and newer is
+  commented out (look for "NEWER EXPANSIONS" in Data/*.lua and Core.lua) so it can be enabled later
+- Added Classic Zul'Gurub raid mounts (Swift Razzashi Raptor, Swift Zulian Tiger) and the MoP world
+  boss mounts (Galleon, Oondasta, Nalak, Sha of Anger) with spawn spots
+- Corrected the Sorrowmoss herb name to Plaguebloom (item 13466)
+- Gathering list now also shows Swiftthistle, Deadnettle, Ancient Lichen and Dark Iron Ore with a "how to get it" tooltip (bonus loot / dungeon nodes / golem drops, rates from Wowhead)
+- From Seviath's Codex: farm notes for the old-raid mount runs (Karazhan, Tempest Keep, Ulduar, Icecrown, Stratholme, Utgarde Pinnacle, Magisters' Terrace) and the farm dungeons Blackrock Depths, Maraudon, Uldaman and Razorfen Kraul
+- Added herbs missing from the gathering data: Stranglekelp, Wintersbite, Arthas' Tears, Firethorn, Sha-Touched Herb
+
+## 1.17.0
+- The War Within rares: all repeatable rares of Isle of Dorn, The Ringing Deeps, Hallowfall,
+  Azj-Kahet (and City of Threads), Undermine and Siren Isle - 96 more rares with spawn tips
+  (Keyflame rares, Croakit, Deathtide, Parasidious, Trungal, cartel event rares, Siren Isle
+  invasion and excavation rares)
+- Beledar's Spawn (Hallowfall) with all its spawn points and the Beledar's Spawn mount (~5-6%)
+- Tka'ktath (Azj-Kahet) with the Siesbarg mount quest chain
+
+## 1.16.0
+- Farm spots learned from your own loot: when you loot cloth, leather, elements, meat, special
+  materials or any Bind on Equip item from a mob in the open world, the addon remembers the mob and
+  where you were. After 3 kills it becomes a farm spot on the map - in every zone, including Midnight
+  zones and future patches. The tooltip shows drop rates measured from your own kills
+- New map layer switch "Learn from my loot"; /sfp learn turns it on/off, /sfp learn reset clears it
+
+## 1.15.1
+- The Venomous Abyss: 9 possible BoE drops from its trash lieutenants, listed greyed out at the
+  bottom of the raid tooltip as "unconfirmed, may have been changed" (guide data from the test realm)
+- March on Quel'Danas: note about the Myth-track BoEs from trash at the start of the raid
+- New map layer switch "Unconfirmed BoEs" to hide those
+
+## 1.15.0
+- Midnight rares: all 59 rares of Eversong Woods, Zul'Aman, Harandar and Voidstorm, each marked with
+  the gold star and listing its zone's two mounts (Cerulean Hawkstrider / Cobalt Dragonhawk, Amani
+  Sharptalon / Escaped Witherbark Pango, Rootstalker Grimlynx / Vibrant Petalwing, Augmented Stormray /
+  Sanguine Harrower), plus spawn tips (patrols, caves, how to spawn Waverly and Queen o' War)
+- The Coiled Isle: all 12 rares with the Ruby Writhe and Topaz Skyfang mounts and how to reach the
+  tricky ones (Farthik, Nar'zira, Szarith)
+
+## 1.14.1
+- Fixed: new Midnight zones on the old continents (like The Coiled Isle) were treated as Classic
+  zones, so the gathering list said they had no nodes. They now list the Midnight ores and herbs
+- Zones without node data now say "No node data for this zone in the addon yet" instead of
+  claiming there are no nodes
+
+## 1.14.0
+- The gathering list now shows only the ores and herbs that really spawn in the zone you are
+  looking at, most common first, with the number of recorded nodes and the best zone for each
+  (from Wowhead's per-zone node data). Classic to Battle for Azeroth fully covered; Shadowlands,
+  Dragonflight and The War Within materials show in their best zone for now
+- The list header shows the zone name; zones without nodes say so
+
+## 1.13.1
+- Classic dungeons and raids: Temple of Ahn'Qiraj added with the Blue, Green, Yellow and Red Qiraji
+  Resonating Crystal mounts (trash drops, so the Adventure Guide doesn't list them). All other Classic
+  dungeons and raids (Deadmines, Wailing Caverns, Shadowfang Keep, Zul'Farrak, Uldaman, Maraudon,
+  Sunken Temple, Ruins of Ahn'Qiraj...) show their sellable BoE drops from the Adventure Guide
+- The gathering list now shows on every zone map, also zones with no farm spots (all Classic zones)
+
+## 1.13.0
+- Every dungeon and raid of every expansion, Classic to Midnight, is now read from the game's
+  Adventure Guide (once per patch, in the background): all mounts on every difficulty and all
+  sellable Bind on Equip items, with the entrance placed on the map automatically
+- Midnight dungeons and raids added, with Lucent Hawkstrider (Magisters' Terrace, Mythic),
+  Spectral Hawkstrider (Windrunner Spire, Mythic) and Ashes of Belo'ren (March on Quel'Danas, Mythic)
+- Instances that drop nothing sellable (only soulbound gear) stay hidden
+
+## 1.12.2
+- Rares worth killing are marked again: a gold star sits on their marker on the map, always visible
+  (it was only in the map text, which is now hover-only). BoE farm spots worth grinding get the star too
+- Hunter tames show the hunter crest on their marker
+
+## 1.12.1
+- Fixed: dungeons/raids showing "Reading loot from the Adventure Guide" with nothing listed.
+  The Adventure Guide is now loaded before it is read, every difficulty is read (heroic/mythic and
+  10/25-player mounts), and items still loading from the server are retried
+- Every dungeon and raid now has verified mounts built in, Classic to The War Within: Deathcharger,
+  Onyxian Drake, Fiery Warhorse, Ashes of Al'ar, Swift White Hawkstrider, Raven Lord, Blue Proto-Drake,
+  Azure / Blue / Black / Twilight Drake, Grand Black War Mammoth, Mimiron's Head, Invincible
+- Instances with nothing to list are hidden from the map and the farm browser
+
+## 1.12.0
+- Dungeons and raids now list every mount and every sellable Bind on Equip item they drop, for all
+  expansions. The loot is read from the game's Adventure Guide in the background after login (once
+  per patch), so it always matches the current game; the boss is shown for each item
+- BoE gear is added to the auction house price scan, so the tooltips show what it sells for
+- Dungeon/raid tooltip is grouped: Mounts, BoE gear (best price first), Materials
+- New instances for their mounts: Onyxia's Lair, Sethekk Halls, Tempest Keep, Magisters' Terrace,
+  The Obsidian Sanctum, The Eye of Eternity, The Oculus, Utgarde Pinnacle, Vault of Archavon
+- /sfp loot re-reads the Adventure Guide (trash-only BoEs are not in the guide, so they are not listed)
+
+## 1.11.0
+- No text written on the world map anymore: names, coordinates, "Best spot" and tags show only
+  when you hover a marker. The "Labels" switch in the map layer panel brings the text back
+
+## 1.10.0
+- Much cleaner map: no more piles of circles. Farm spots, rares, special materials and hunter tames
+  now show one small marker per area; mobs whose areas overlap share a marker and its tooltip lists
+  all of them with their drops ("+2 more" on the label)
+- Mining and herbalism use small pick / flower symbols instead of glows: a few per zone, each one
+  lists every ore and herb that spawns around it
+- Mining and herbalism now cover Classic, The Burning Crusade and Wrath of the Lich King too
+  (54 more ores and herbs, each in its best zone) - all expansions are now included
+
+## 1.9.0
+- Ores and herbs are no longer listed inside creature spot tooltips
+- New gathering list at the bottom-right of every zone map: that expansion's ores and herbs, each
+  with its best zone ("best zone: here" in green when you are looking at it). Click a row to open
+  the best zone; click the header to collapse. Midnight included (herbs: Harandar, ores: every zone)
+- Special materials get their own magenta circles and a [Special] tag: Majestic lure beasts,
+  Sunfire Silk / Arcanoweave delves, rare hides (Heavy Callous Hide and others)
+- New map layer switches: "Special materials" and "Gathering list"
+
+## 1.8.0
+- Layer button on the world map (top-left corner): a panel to turn each layer on or off separately -
+  farm spots, rares, hunter tames, mining, herbalism, dungeons, raids, labels, whole-zone glow,
+  plus All / None. Right-click the button to hide or show everything
+- Mining and herbalism, and dungeons and raids, are now separate options (also in the farm browser)
+- /sfp mapbutton hides or shows the map button
+
+## 1.7.0
+- Mining and herbalism: the single best zone for every ore and herb from Cataclysm to The War Within
+  (69 materials), picked by the most recorded nodes on Wowhead. The node area glows (ore = amber,
+  herb = mint) with a "Best zone" label; Midnight ores/herbs are listed per zone (Harandar for herbs)
+- Dungeons and raids worth farming, Cataclysm to The War Within: 33 mounts with drop chances
+  (Stonecore, Vortex Pinnacle, Zul'Gurub, Firelands, Dragon Soul, Throne of Thunder, Karazhan,
+  Nighthold, Antorus, Freehold, Underrot, Mechagon, Ny'alotha, Sanctum, Sepulcher, Amirdrassil,
+  Nerub-ar Palace, Undermine and more). Entrance icons on the map, loot on hover
+- Every loot line now has a small source icon: mining, herbalism, skinning, cloth, elements,
+  enchanting, cooking, BoE, mount, pet, toy
+- "Best spot for ..." - each creature material is marked on the mob with the most spawns
+- Enchanting materials (dust, essence, shards, crystals) for every expansion
+- New options "Mining & herbs" and "Dungeon/raid icons", /sfp gather and /sfp dungeons
+
+## 1.6.0
+- Hunter tames: 21 spirit beasts and unique-looking pets, shown with the hunter crest in
+  hunter green (separate from the orange rares) and tagged [Hunter]
+- Their tooltip says what they are (spirit beast = Beast Mastery only, or unique pet = any hunter)
+  and how to tame them: phasing quests, armor removal, kiting, hidden spawns, quest chains
+- New tames: Ban'thalos, Ankha, Magria (Hyjal), Karoma, Ghostcrawler, Lightning Paw, Lost Spectral
+  Gryphon (Stormwind), Gon (Orgrimmar), Pogeyan, Spirit of Atha, Degu, Gumi, Hutia, Gara,
+  Bulvinkel, Myonix, Pashya
+- Rares now have short descriptions and spawn tactics in their tooltip
+- "Hunter tames" option and /sfp hunter
+
+## 1.5.1
+- Rare tooltips now list what the rare drops (mounts, pets, toys) plus everything else
+  farmable in the zone with AH prices, the same as farm spots
+- Gold star symbol marks rares and BoE spots that are worth grinding (map, tooltip, browser)
+- Rares also show their pet and toy drops
+
+## 1.5.0
+- New expansions: The War Within (7 zones) and Midnight (4 zones) with cloth, leather,
+  scales, hides and Renowned Beast reagents
+- Rare spawns: 75 rares that drop mounts (plus Wrath hunter spirit beasts) shown as
+  orange glowing spots tagged [Rare] / [Mount], with coordinates - from Wrath to The War Within
+- New farm spots: Weavercloth nerubians and Stormcharged Leather packs (Isle of Dorn, Hallowfall),
+  Midnight scale mobs (Eversong), cloth delves (Harandar, Voidstorm), Renowned Beast lures
+- Rare-only zones added where needed (Arathi and Darkshore warfronts, Timeless Isle)
+- "Rare spots" option and /sfp rares
+
+## 1.4.2
+- Every farm zone now shows a line for random green & blue BoE gear (any mob, with the zone's level range)
+
+## 1.4.1
+- BoE gear and recipes added, with drop chances: Formula: Enchant Weapon - Crusader, Nightblade,
+  Glowing Brightwood Staff, Skullflame Shield, Teebu's Blazing Longsword, The Night Blade,
+  Snobold Ripper, Void Bound Knife, The Glazer, Varruth's Guillotine
+- BoE farm spots on the map, tagged [BoE]: Scarlet Archmage (Eastern Plaguelands), Flowing Honey
+  (Stormsong Valley), Mawsworn Striker + Fettered Warden (Zereth Mortis), Onslaught Footman
+  (Dragonblight), Dawnblade Summoner (Isle of Quel'Danas - new farm zone)
+- 138 farm mobs in 64 zones, 169 items
+
+## 1.4.0 - first public release
+- About page in Esc > Options > AddOns > SeviathsFarmPack (version, features, commands)
+- Addon Compartment entry (left-click: farm browser, right-click: about)
+- Version shown in the farm browser, minimap tooltip and `/sfp version`
+- Farm spot tooltips list the mob's own drops plus everything else farmable in that zone
+
+## 1.3.1
+- Farm spots now draw above the zone's explored-area art and other map addons
+- Spots no longer catch mouse clicks - clicking the map opens zones as normal
+- Zooming into a continent map shows the full spawn areas with labels
+- Waypoints use Blizzard's Ctrl+Click
+
+## 1.3.0
+- Exact farm spots glow as small cyan areas instead of whole zones
+- Info shows only when hovering a spot; whole-zone glow and item panel are optional
+- 132 farm mobs in 61 zones
+
+## 1.2.0
+- Monster spawn points from Wowhead with name + coordinate labels
+
+## 1.1.0
+- Dragonflight added; item data checked against Wowhead; Wowhead links on items
