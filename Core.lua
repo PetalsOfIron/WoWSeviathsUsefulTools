@@ -4,11 +4,13 @@
 local ADDON, SFP = ...
 _G.SeviathsUsefulTools = SFP
 
--- Mists of Pandaria Classic: make sure the C_Item helpers exist whatever the client build
-C_Item = C_Item or {}
-C_Item.GetItemInfo = C_Item.GetItemInfo or GetItemInfo
-C_Item.GetItemIconByID = C_Item.GetItemIconByID or GetItemIcon
-C_Item.RequestLoadItemDataByID = C_Item.RequestLoadItemDataByID or function(id) GetItemInfo(id) end
+-- The game's own tables are never written to when they already have what we need: writing to
+-- a Blizzard table (even with the same value) taints it and breaks protected actions such as
+-- right-clicking an item in the bags (ADDON_ACTION_FORBIDDEN). Only a missing piece is filled in.
+if not _G.C_Item then _G.C_Item = {} end
+if not C_Item.GetItemInfo then C_Item.GetItemInfo = GetItemInfo end
+if not C_Item.GetItemIconByID then C_Item.GetItemIconByID = GetItemIcon end
+if not C_Item.RequestLoadItemDataByID then C_Item.RequestLoadItemDataByID = function(id) GetItemInfo(id) end end
 
 -- Merged modules (Codex, Dungeons & Raids, Guild Helper) each get their own private
 -- table; ADDON is the Farm Pack's name so their ADDON_LOADED checks still match.

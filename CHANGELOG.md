@@ -1,5 +1,8 @@
 # SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
 
+## 1.20.4-mop
+- Fixed ADDON_ACTION_FORBIDDEN when right-clicking bag items: the addon no longer writes to the game's C_Item table when it already exists
+
 ## 1.20.3-mop
 - Monster tooltips: every monster shows its NPC ID, drops (learned, farm data, database) or a hint; works with all tooltip hooks; /sfp tipdebug explains when nothing shows
 
