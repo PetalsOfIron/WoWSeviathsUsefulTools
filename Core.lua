@@ -702,6 +702,9 @@ SlashCmdList["SEVIATHSUSEFULTOOLS"] = function(msg)
         end
     elseif cmd == "questie" then
         if SFP.QuestieOwnIcons then SFP:QuestieOwnIcons() end
+    elseif cmd == "tipdebug" then
+        SFP.tipDebug = not SFP.tipDebug
+        SFP:Print("Tooltip debug " .. (SFP.tipDebug and "ON - hover a monster" or "OFF"))
     elseif cmd == "menu" then
         if SFP.ToggleMenu then SFP:ToggleMenu() end
     elseif cmd == "errors" then

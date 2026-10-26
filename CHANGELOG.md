@@ -1,5 +1,8 @@
 # SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
 
+## 1.20.3-mop
+- Monster tooltips: every monster shows its NPC ID, drops (learned, farm data, database) or a hint; works with all tooltip hooks; /sfp tipdebug explains when nothing shows
+
 ## 1.20.2-mop
 - Mount pages: "Show on map" pins the vendor, boss, quest giver or instance entrance
 

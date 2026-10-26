@@ -417,17 +417,38 @@ local function buildSeeds()
     end
 end
 
-local function unitTip(tt)
-    if not SFP.db or not SFP.db.tooltip then return end
-    local _, unit = tt:GetUnit()
-    if not unit then return end
-    local kind, id = guidInfo(UnitGUID(unit))
-    if kind ~= "npc" then return end
+-- true when our lines are already in this tooltip (hooks can fire more than once)
+local function hasOurLines(tt)
+    local n = tonumber(tt.NumLines and tt:NumLines()) or 0
+    for i = n, 1, -1 do
+        local fs = _G[(tt:GetName() or "GameTooltip") .. "TextLeft" .. i]
+        local t = fs and fs.GetText and fs:GetText()
+        if type(t) == "string" and t:find("Seviaths", 1, true) then return true end
+    end
+    return false
+end
+
+local function unitTip(tt, data)
+    local function dbg(msg) if SFP.tipDebug then SFP:Print("unit tooltip: " .. msg) end end
+    if not SFP.db or not SFP.db.tooltip then return dbg("tooltip lines are switched off") end
+    local guid = data and data.guid
+    local unit
+    if not guid then
+        local _, u = tt:GetUnit()
+        unit = u
+        guid = unit and UnitGUID(unit)
+    end
+    if not guid then return dbg("no unit in the tooltip") end
+    local kind, id = guidInfo(guid)
+    if kind ~= "npc" then return dbg("not a monster") end
+    if unit and (UnitIsPlayer(unit) or UnitPlayerControlled(unit)) then return dbg("player or pet") end
+    if hasOurLines(tt) then return end
+    dbg("npc " .. id)
     local rec = SFP.db.npcs[id]
     local seed = SFP.farmNpc and SFP.farmNpc[id]
-    if not rec and not seed and not (SFP.QuestieDropsOf and SFP:QuestieDropsOf(id)) then return end
     tt:AddLine(" ")
-    tt:AddLine("|c" .. SFP.CYAN_HEX .. "Seviaths|r" .. (rec and rec.k and rec.k > 0 and ("  |cff808080" .. rec.k .. " kills seen|r") or ""))
+    tt:AddLine("|c" .. SFP.CYAN_HEX .. "Seviaths|r  |cff808080NPC " .. id .. "|r" ..
+        (rec and rec.k and rec.k > 0 and ("  |cff808080" .. rec.k .. " kills seen|r") or ""))
     local list = {}
     for itemID, c in pairs(rec and rec.d or {}) do list[#list + 1] = { itemID, c } end
     table.sort(list, function(a, b) return a[2] > b[2] end)
@@ -445,16 +466,35 @@ local function unitTip(tt)
             tt:AddDoubleLine("|T" .. SFP:ItemIcon(sk[i][1]) .. ":12|t " .. SFP:ItemName(sk[i][1]), "skinning", 1, 1, 1, 0.7, 0.7, 0.7)
         end
     end
-    if #list == 0 and not seed and SFP.QuestieDropsOf then
-        local known = SFP:QuestieDropsOf(id)
-        for i = 1, min(6, known and #known or 0) do
-            tt:AddLine("|T" .. SFP:ItemIcon(known[i]) .. ":12|t " .. SFP:ItemName(known[i]) .. "  |cff808080(database)|r")
-        end
-    end
-    if #list == 0 and seed then
+    local shown = #list > 0
+    if not shown and seed then
         for i = 1, min(6, #seed) do
             tt:AddLine("|T" .. SFP:ItemIcon(seed[i]) .. ":12|t " .. SFP:ItemName(seed[i]) .. "  |cff808080(farm target)|r")
         end
+        shown = true
+    end
+    if not shown and SFP.QuestieDropsOf then
+        local known = SFP:QuestieDropsOf(id)
+        for i = 1, min(6, known and #known or 0) do
+            tt:AddLine("|T" .. SFP:ItemIcon(known[i]) .. ":12|t " .. SFP:ItemName(known[i]) .. "  |cff808080(database)|r")
+            shown = true
+        end
+    end
+    -- quests it gives or takes (Questie database)
+    local Q, N = _G.QuestDB, _G.NpcDB
+    if Q and N then
+        local ok, starts = pcall(N.questStarts, id)
+        if ok and starts and #starts > 0 then
+            local names = {}
+            for i = 1, min(3, #starts) do
+                local okn, nm = pcall(Q.name, starts[i])
+                names[#names + 1] = okn and nm or ("quest " .. starts[i])
+            end
+            tt:AddLine("Starts: " .. table.concat(names, ", "), 0.6, 1, 0.6, true)
+        end
+    end
+    if not shown then
+        tt:AddLine("No drops learned yet - kill it and loot to record them", 0.5, 0.5, 0.5, true)
     end
     tt:Show()
 end
@@ -490,6 +530,9 @@ ev:SetScript("OnEvent", function(_, event, a, b, c, d)
     if not SFP.db then return end
     if event == "UPDATE_MOUSEOVER_UNIT" then
         SFP:Safe("record mouseover", recordUnit, "mouseover")
+        C_Timer.After(0.05, function()
+            if GameTooltip:IsShown() and UnitExists("mouseover") then SFP:Safe("monster tooltip", unitTip, GameTooltip) end
+        end)
     elseif event == "PLAYER_TARGET_CHANGED" then
         SFP:Safe("record target", recordUnit, "target")
     elseif event == "LOOT_READY" then
@@ -534,12 +577,13 @@ SFP:OnLogin(function()
     local TT = Enum and Enum.TooltipDataType
     local okUnit, okItem = false, false
     if TooltipDataProcessor and TT and TT.Unit then
-        okUnit = pcall(TooltipDataProcessor.AddTooltipPostCall, TT.Unit, function(tt) if tt == GameTooltip then unitTip(tt) end end)
+        okUnit = pcall(TooltipDataProcessor.AddTooltipPostCall, TT.Unit, function(tt, data) if tt == GameTooltip then unitTip(tt, data) end end)
     end
     if TooltipDataProcessor and TT and TT.Item then
         okItem = pcall(TooltipDataProcessor.AddTooltipPostCall, TT.Item, function(tt, data) if tt == GameTooltip then itemTip(tt, data) end end)
     end
-    if not okUnit then pcall(GameTooltip.HookScript, GameTooltip, "OnTooltipSetUnit", unitTip) end
+    -- both hooks may fire: once per tooltip is enough
+    pcall(GameTooltip.HookScript, GameTooltip, "OnTooltipSetUnit", function(tt) unitTip(tt) end)
     if not okItem then pcall(GameTooltip.HookScript, GameTooltip, "OnTooltipSetItem", itemTip) end
 end)
 
