@@ -1,5 +1,8 @@
 # SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
 
+## 1.24.4-mop
+- Quests hidden under a collapsed zone header of the game's quest log are found now (the log expands the headers once)
+
 ## 1.24.3-mop
 - Clicking a quest's pin button (tracker or quest log) pins it and opens the map at the exact place
 

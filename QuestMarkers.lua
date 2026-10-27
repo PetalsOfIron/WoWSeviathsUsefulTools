@@ -60,33 +60,41 @@ local function refreshState()
         state.raceMask = lib.Enum.raceMaskById and lib.Enum.raceMaskById[raceID]
         state.classMask = lib.Enum.classKeys and lib.Enum.classKeys[classFile]
     end
-    -- quest log
-    wipe(state.inLog); wipe(state.complete)
-    state.list = {}
-    local modern = C_QuestLog and C_QuestLog.GetNumQuestLogEntries and C_QuestLog.GetInfo
-    local n, numQuests
-    if modern then n, numQuests = C_QuestLog.GetNumQuestLogEntries()
-    elseif GetNumQuestLogEntries then n, numQuests = GetNumQuestLogEntries() end
-    n = n or 0
-    state.gameCount = numQuests
-    local zone = "Quests"
-    for i = 1, n do
-        local qid, header, isComplete, title, level
-        if modern then
-            local info = C_QuestLog.GetInfo(i)
-            if info then qid, header, title, level = info.questID, info.isHeader, info.title, info.level end
-            if qid and C_QuestLog.IsComplete then isComplete = C_QuestLog.IsComplete(qid) end
-        elseif GetQuestLogTitle then
-            local t, l, _, isHeader, _, comp, _, questID = GetQuestLogTitle(i)
-            qid, header, isComplete, title, level = questID, isHeader, (comp == 1), t, l
+    -- quest log (quests under a collapsed zone header are hidden by the game: expand them all once)
+    local function scan()
+        wipe(state.inLog); wipe(state.complete)
+        state.list = {}
+        local modern = C_QuestLog and C_QuestLog.GetNumQuestLogEntries and C_QuestLog.GetInfo
+        local n, numQuests
+        if modern then n, numQuests = C_QuestLog.GetNumQuestLogEntries()
+        elseif GetNumQuestLogEntries then n, numQuests = GetNumQuestLogEntries() end
+        n = n or 0
+        state.gameCount = numQuests
+        local zone = "Quests"
+        for i = 1, n do
+            local qid, header, isComplete, title, level
+            if modern then
+                local info = C_QuestLog.GetInfo(i)
+                if info then qid, header, title, level = info.questID, info.isHeader, info.title, info.level end
+                if qid and C_QuestLog.IsComplete then isComplete = C_QuestLog.IsComplete(qid) end
+            elseif GetQuestLogTitle then
+                local t, l, _, isHeader, _, comp, _, questID = GetQuestLogTitle(i)
+                qid, header, isComplete, title, level = questID, isHeader, (comp == 1), t, l
+            end
+            if header then
+                zone = title or zone
+            elseif qid then
+                state.inLog[qid] = true
+                if isComplete then state.complete[qid] = true end
+                state.list[#state.list + 1] = { q = qid, t = title or questName(qid), l = level or 0, z = zone, c = isComplete and true or false, i = i }
+            end
         end
-        if header then
-            zone = title or zone
-        elseif qid then
-            state.inLog[qid] = true
-            if isComplete then state.complete[qid] = true end
-            state.list[#state.list + 1] = { q = qid, t = title or questName(qid), l = level or 0, z = zone, c = isComplete and true or false, i = i }
-        end
+    end
+    scan()
+    if state.gameCount and #state.list < state.gameCount then
+        if C_QuestLog and C_QuestLog.ExpandQuestHeader then pcall(C_QuestLog.ExpandQuestHeader, 0, true) end
+        if ExpandQuestHeader then pcall(ExpandQuestHeader, 0) end
+        scan()
     end
     -- finished quests
     wipe(state.done)
