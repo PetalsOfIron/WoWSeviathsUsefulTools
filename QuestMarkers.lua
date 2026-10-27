@@ -479,8 +479,8 @@ end
 ---------------------------------------------------------------------------
 local RAID = "Interface\\TargetingFrame\\UI-RaidTargetingIcon_"
 local STYLE = {
-    avail  = { ring = { 1.0, 0.82, 0.2 }, glyph = "!", gcolor = { 1.0, 0.9, 0.4 } },
-    gray   = { ring = { 0.6, 0.6, 0.6 }, glyph = "!", gcolor = { 0.8, 0.8, 0.8 } },
+    avail  = { bare = "Interface\\GossipFrame\\AvailableQuestIcon" },
+    gray   = { bare = "Interface\\GossipFrame\\AvailableQuestIcon", gray = true },
     turnin = { ring = { 0.1, 0.9, 1.0 }, glyph = "?", gcolor = { 0.6, 1.0, 1.0 } },
     kill   = { tex = RAID .. "8", ring = { 1.0, 0.3, 0.3 } },
     loot   = { tex = RAID .. "3", ring = { 0.4, 1.0, 0.5 } },
@@ -509,6 +509,13 @@ local function newIcon(parent)
     return f
 end
 
+local function fit(f, s)
+    f:SetSize(s, s)
+    f.core:SetSize(s - 4, s - 4)
+    local p = f.bare and s or (s - 6)
+    f.pic:SetSize(p, p)
+end
+
 local function style(f, m)
     local st
     if m.type == "avail" then st = m.trivial and STYLE.gray or STYLE.avail
@@ -516,6 +523,15 @@ local function style(f, m)
     elseif m.type == "pin" then st = STYLE.pin
     elseif m.type == "zone" then st = (m.k == "turn") and STYLE.turnin or STYLE.kill
     else st = STYLE[m.k] or STYLE.kill end
+    f.bare = st.bare and true or false
+    f.ring:SetShown(not st.bare); f.core:SetShown(not st.bare)
+    if st.bare then
+        f.pic:SetTexture(st.bare); f.pic:Show(); f.glyph:Hide()
+        f.pic:SetVertexColor(st.gray and 0.65 or 1, st.gray and 0.65 or 1, st.gray and 0.65 or 1, 1)
+        f.m = m
+        return
+    end
+    f.pic:SetVertexColor(1, 1, 1, 1)
     f.ring:SetVertexColor(st.ring[1], st.ring[2], st.ring[3], 1)
     if st.tex then
         f.pic:SetTexture(st.tex); f.pic:Show(); f.glyph:Hide()
@@ -617,7 +633,7 @@ function Q:DrawContinent(mapID, w, h)
         if not f then f = newIcon(layer); wire(f); wpool[wused] = f end
         f.mapID = mapID
         style(f, { type = "zone", k = kind, zone = zone, quests = qids })
-        f:SetSize(size, size); f.core:SetSize(size - 4, size - 4); f.pic:SetSize(size - 6, size - 6)
+        fit(f, size)
         f:ClearAllPoints()
         f:SetPoint("CENTER", layer, "TOPLEFT", ((l + r) / 2) * w, -((t + b) / 2) * h)
         f:SetFrameLevel(layer:GetFrameLevel() + 2)
@@ -647,9 +663,7 @@ function Q:DrawWorldMap()
         f.mapID = mapID
         style(f, m)
         local s = (m.type == "obj") and size * 0.8 or (m.type == "pin" and size * 1.5 or size)
-        f:SetSize(s, s)
-        f.core:SetSize(s - 4, s - 4)
-        f.pic:SetSize(s - 6, s - 6)
+        fit(f, s)
         f:ClearAllPoints()
         f:SetPoint("CENTER", layer, "TOPLEFT", m.x * w, -m.y * h)
         f:SetFrameLevel(layer:GetFrameLevel() + (m.type == "obj" and 1 or 3))
@@ -715,7 +729,7 @@ local function mupdate()
             if not f then f = newIcon(UIParent); wire(f) end
             f.mapID = mapID
             style(f, m)
-            f:SetSize(15, 15); f.core:SetSize(11, 11); f.pic:SetSize(9, 9)
+            fit(f, m.type == "avail" and 17 or 15)
             f:Show()
             if pcall(h.AddMinimapIconMap, h, Q, f, mapID, m.x, m.y, false, false) then
                 mshown[key] = f
@@ -791,9 +805,9 @@ local function updatePlate(unit)
     f:SetParent(plate)
     f:ClearAllPoints()
     f:SetPoint("BOTTOM", plate, "TOP", 0, 4)
-    f:SetSize(22, 22); f.core:SetSize(18, 18); f.pic:SetSize(14, 14)
-    style(f, { type = (what == "kill") and "obj" or what, k = "kill", trivial = false })
+    style(f,  { type = (what == "kill") and "obj" or what, k = "kill", trivial = false })
     f.m = nil
+    fit(f, what == "avail" and 26 or 22)
     f:Show()
 end
 
@@ -933,7 +947,7 @@ SFP:OnLogin(function()
     if SFP.db.questTrivial == nil then SFP.db.questTrivial = false end
     if SFP.db.questHeads == nil then SFP.db.questHeads = true end
     if SFP.db.questZones == nil then SFP.db.questZones = true end
-    if SFP.db.questAvail == nil then SFP.db.questAvail = false end -- only quests you have picked up
+    if SFP.db.questAvailV2 == nil then SFP.db.questAvailV2 = true; SFP.db.questAvail = true end -- untaken quests show again, with Blizzard's own "!"
     Q.enabled = SFP.db.questMarkers and SFP:HasQuestieDB() and true or false
     if not SFP:HasQuestieDB() then
         C_Timer.After(8, function()

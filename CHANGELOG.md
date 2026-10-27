@@ -1,5 +1,8 @@
 # SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
 
+## 1.25.0-mop
+- Quests you can still pick up show again on the zone map, minimap and over their givers, with Blizzard's own yellow "!" icon (no custom marker); low-level ones are greyed
+
 ## 1.24.5-mop
 - Fixed an error when the world map switched to a continent view (a helper was used before it was defined)
 

@@ -183,7 +183,7 @@ local function buildSettings(pane)
         mkCheck(pane, "Item and monster tooltip lines", function() return SFP.db.tooltip end, function(v) SFP.db.tooltip = v end, 12, -40),
         mkCheck(pane, "Quest markers on the map and minimap", function() return SFP.db.questMarkers ~= false end,
             function(v) if SFP.QuestMarkers then SFP.QuestMarkers:SetEnabled(v) end end, 260, -40),
-        mkCheck(pane, "Show quests I can pick up (gold !)", function() return SFP.db.questAvail end,
+        mkCheck(pane, "Show quests I can pick up (yellow !)", function() return SFP.db.questAvail end,
             function(v) SFP.db.questAvail = v; if SFP.QuestMarkers then SFP.QuestMarkers:Refresh() end end, 260, -118),
         mkCheck(pane, "Also show low-level quests", function() return SFP.db.questTrivial end,
             function(v) SFP.db.questTrivial = v; if SFP.QuestMarkers then SFP.QuestMarkers:Refresh() end end, 260, -66),
