@@ -55,6 +55,7 @@ local function rec(kind, id)
 end
 
 local DB = {}
+local extraOf                  -- forward declaration (positions from Data/QD_Extra.lua)
 SFP.QDB = DB
 
 ---------------------------------------------------------------------------
@@ -132,7 +133,7 @@ local Npc = {}
 DB.Npc = Npc
 local npcIds
 function Npc.GetAllIds() npcIds = npcIds or ids(QD.n); return npcIds end
-function Npc.name(id) local r = rec("n", id); return r and r[1] or nil end
+function Npc.name(id) local r = rec("n", id); if r then return r[1] end local x = extraOf("n", id); return x and x.name ~= "" and x.name or nil end
 function Npc.minLevel(id) local r = rec("n", id); return r and num(r[2]) end
 function Npc.maxLevel(id) local r = rec("n", id); return r and num(r[3]) end
 function Npc.rank(id) local r = rec("n", id); return r and num(r[4]) end
@@ -179,7 +180,25 @@ local function spawnsOf(kind, id, idx)
     c[id] = v
     return v or nil
 end
-function Npc.spawns(id) return spawnsOf("n", id, 7) end
+-- positions found later (Data/QD_Extra.lua): SFP.QD.xn / xo = id -> "namearea:x,y,...;area:...", xi = item -> "npcs|objects"
+local xCache = { n = {}, o = {} }
+extraOf = function(kind, id)
+    local src = QD["x" .. kind]
+    local raw = src and src[id]
+    if not raw then return nil end
+    local c = xCache[kind][id]
+    if c then return c end
+    local name, sp = raw:match("^([^]*)(.*)$")
+    c = { name = name, spawns = parseSpawns(sp) }
+    xCache[kind][id] = c
+    return c
+end
+function Npc.spawns(id)
+    local sp = spawnsOf("n", id, 7)
+    if sp then return sp end
+    local x = extraOf("n", id)
+    return x and x.spawns or nil
+end
 
 local startsBy, endsBy
 local function buildQuestGivers()
@@ -205,16 +224,35 @@ function Npc.questEnds(id) if not startsBy then buildQuestGivers() end return en
 local Object = {}
 DB.Object = Object
 function Object.GetAllIds() return ids(QD.o) end
-function Object.name(id) local r = rec("o", id); return r and r[1] or nil end
-function Object.spawns(id) return spawnsOf("o", id, 2) end
+function Object.name(id) local r = rec("o", id); if r then return r[1] end local x = extraOf("o", id); return x and x.name ~= "" and x.name or nil end
+function Object.spawns(id)
+    local sp = spawnsOf("o", id, 2)
+    if sp then return sp end
+    local x = extraOf("o", id)
+    return x and x.spawns or nil
+end
 
 local Item = {}
 DB.Item = Item
 local itemIds
 function Item.GetAllIds() itemIds = itemIds or ids(QD.i); return itemIds end
 function Item.name(id) local r = rec("i", id); return r and r[1] ~= "" and r[1] or nil end
-function Item.npcDrops(id) local r = rec("i", id); return r and nums(r[2]) end
-function Item.objectDrops(id) local r = rec("i", id); return r and nums(r[3]) end
+local function itemExtra(id, which)
+    local raw = QD.xi and QD.xi[id]
+    if not raw then return nil end
+    local a, b = raw:match("^([^|]*)|(.*)$")
+    return nums(which == 1 and a or b)
+end
+local function joined(a, b)
+    if not a then return b end
+    if not b then return a end
+    local out = {}
+    for _, v in ipairs(a) do out[#out + 1] = v end
+    for _, v in ipairs(b) do out[#out + 1] = v end
+    return out
+end
+function Item.npcDrops(id) local r = rec("i", id); return joined(r and nums(r[2]), itemExtra(id, 1)) end
+function Item.objectDrops(id) local r = rec("i", id); return joined(r and nums(r[3]), itemExtra(id, 2)) end
 function Item.vendors(id) local r = rec("i", id); return r and nums(r[4]) end
 
 ---------------------------------------------------------------------------

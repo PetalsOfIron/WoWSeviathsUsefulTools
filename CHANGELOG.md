@@ -1,5 +1,8 @@
 # SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
 
+## 1.27.0-mop
+- Positions the quest database lacks (monsters, objects, drop sources of quest items) are fetched from Wowhead into Data/QD_Extra.lua (tools/scrape_questdata.py + export_questdata.py); first batch included
+
 ## 1.26.10-mop
 - Enemy nameplates are switched on once when quest head marks are on (they were off, so no mark could be shown)
 
