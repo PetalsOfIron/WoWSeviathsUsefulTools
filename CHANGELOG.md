@@ -1,5 +1,8 @@
 # SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
 
+## 1.23.2-mop
+- Works without the Questie addon: only the QuestieDB data addon is needed (zone tables are read from it); a chat line says so when it is missing or disabled
+
 ## 1.23.1-mop
 - Continent and world maps: one icon in every zone that holds quest work (skull = kill / collect, cyan ? = hand in) with the quest names on hover, click opens the zone
 

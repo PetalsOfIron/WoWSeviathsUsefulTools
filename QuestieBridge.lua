@@ -50,6 +50,27 @@ end
 local zoneDBCache
 local function getZoneDB()
     if zoneDBCache ~= nil then return zoneDBCache or nil end
+    -- the data addon publishes its zone tables (area id <-> map id, dungeons)
+    local lib = _G.LibQuestieDB
+    local sup = lib and lib.Support and lib.Support.Get and safe(lib.Support.Get, "ZoneDB")
+    local p = sup and sup.private
+    if p and (p.areaIdToUiMapId or p.areaIdToUiMapIdOverride) then
+        local function load(str)
+            local f = type(str) == "string" and loadstring(str)
+            local ok, t = pcall(f or function() return {} end)
+            return ok and type(t) == "table" and t or {}
+        end
+        local a2u, u2a = load(p.areaIdToUiMapId), load(p.uiMapIdToAreaId)
+        for k, v in pairs(load(p.areaIdToUiMapIdOverride)) do a2u[k] = v end
+        for k, v in pairs(load(p.uiMapIdToAreaIdOverride)) do u2a[k] = v end
+        local Z = { dungeons = p.dungeons }
+        function Z:GetUiMapIdByAreaId(area) return a2u[area] end
+        function Z:GetAreaIdByUiMapId(map) return u2a[map] end
+        function Z:GetDungeons() return p.dungeons end
+        zoneDBCache = Z
+        return Z
+    end
+    -- older setups: Questie itself provides it
     local loader = _G.QuestieLoader
     zoneDBCache = (loader and loader.ImportModule and safe(function() return loader:ImportModule("ZoneDB") end)) or false
     return zoneDBCache or nil
@@ -431,8 +452,7 @@ end
 
 local function importRares()
     local _, N = dbs()
-    local loader = _G.QuestieLoader
-    local ZoneDB = loader and loader.ImportModule and safe(function() return loader:ImportModule("ZoneDB") end)
+    local ZoneDB = getZoneDB()
     if not (N and ZoneDB and ZoneDB.GetUiMapIdByAreaId) then return end
     local known = {}
     for _, list in pairs(SFP.Rares or {}) do

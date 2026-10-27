@@ -887,7 +887,14 @@ SFP:OnLogin(function()
     if SFP.db.questZones == nil then SFP.db.questZones = true end
     if SFP.db.questAvail == nil then SFP.db.questAvail = false end -- only quests you have picked up
     Q.enabled = SFP.db.questMarkers and SFP:HasQuestieDB() and true or false
-    if not SFP:HasQuestieDB() then return end
+    if not SFP:HasQuestieDB() then
+        C_Timer.After(8, function()
+            if not SFP:HasQuestieDB() then
+                SFP:Print("Quest markers, the quest tracker and the quest guide need the QuestieDB data addon enabled (Esc > AddOns). It is only data - Questie itself can stay off.")
+            end
+        end)
+        return
+    end
 
     -- world map layer on the map canvas
     if WorldMapFrame and WorldMapFrame.GetCanvas then
