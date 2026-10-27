@@ -17,3 +17,8 @@ item sources), rares imported onto the world map.
   Questie provide; hand-written tactics for hard bosses and mounts are not written yet.
 - Quests on the minimap are drawn by Questie (installed); this addon does not duplicate that.
 - Snake minimap skin skipped on request (design notes are in memory: useful-tools-addon).
+
+## Next session: missing quest positions (Wowhead scrape)
+- Run: cd tools; python scrape_questdata.py (resumable, 3 s per request, stops on 403/429), then python export_questdata.py, /reload, commit + push.
+- qcache has 1777 of about 1700 pages when this was written; Data/QD_Extra.lua is the exported part.
+- Still open: head marks / hover use quest-text names for quests with no monster data; quest areas need the scraped spawns.
