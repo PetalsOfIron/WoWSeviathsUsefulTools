@@ -1,5 +1,20 @@
 # SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
 
+## 1.23.1-mop
+- Continent and world maps: one icon in every zone that holds quest work (skull = kill / collect, cyan ? = hand in) with the quest names on hover, click opens the zone
+
+## 1.23.0-mop
+- Quest tracker and quest log replaced: a movable tracker (drag its title, Ctrl+mouse wheel resizes)
+  with objectives and a map pin button per quest, and a quest log window (/sfp log, the L key) with
+  zones, objectives, "Pin on map", waypoint, track / untrack, abandon, and a link to the Codex guide
+
+## 1.22.0-mop
+- Quest icons over monster heads (nameplates): gold "!" for monsters / NPCs that give a quest you can take,
+  cyan "?" for the ones you hand a finished quest in to, a skull for monsters you have to kill
+- Continent and world maps tint every zone that holds your quest work, transparently (orange: kill / collect
+  zones, cyan: turn-in zones), so you can see through it
+- Settings: "Quest icons over monster heads", "Tint zones that hold my quests"
+
 ## 1.21.2-mop
 - Quests of your log that the database cannot place on a map (cross-zone turn-ins, missing spawns) are placed with the game's own quest position; /sfp questdebug explains what the markers see
 

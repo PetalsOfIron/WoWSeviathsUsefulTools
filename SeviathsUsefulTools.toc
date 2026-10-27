@@ -2,7 +2,7 @@
 ## Title: |cff00e5ffSeviaths|rUsefulTools
 ## Notes: Glowing farm spots and rare spawns on the world map for in-demand creature loot (cloth, leather, elements, BoE gear, mounts, pets), plus mining/herbalism best zones, dungeon/raid mounts and hunter tames with AH prices and Wowhead links. Classic to Mists of Pandaria (Mists of Pandaria Classic edition). Includes the Codex, Dungeons & Raids and Guild Helper.
 ## Author: Seviath
-## Version: 1.21.2-mop
+## Version: 1.23.1-mop
 ## X-Formerly: SeviathsFarmPack
 ## Category: Professions
 ## IconTexture: Interface\Icons\INV_Misc_Map_01
@@ -32,6 +32,7 @@ Collector.lua
 QuestieBridge.lua
 MinimapPins.lua
 QuestMarkers.lua
+QuestUI.lua
 Scanner.lua
 WorldMap.lua
 MapMenu.lua

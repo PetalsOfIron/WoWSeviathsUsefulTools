@@ -23,9 +23,11 @@ end
 local Q = {}
 SFP.QuestMarkers = Q
 
+local entName                       -- forward declaration (defined with the tooltip helpers)
 local version = 0                    -- bumped whenever the quest state changes
 local state = { inLog = {}, complete = {}, done = {}, level = 1, raceMask = nil, classMask = nil }
 local startIdx, finishIdx = {}, {}   -- [areaID] = flat { questID, entityID, kind, ... } (kind 1 npc, 2 object)
+local starters = {}                  -- npcID -> { questIDs } of quests this npc starts
 local indexed, indexing = false, false
 local cache = {}                     -- ["map:version"] = collected markers
 local elig = {}                      -- questID -> true / false (per version)
@@ -55,21 +57,26 @@ local function refreshState()
     end
     -- quest log
     wipe(state.inLog); wipe(state.complete)
+    state.list = {}
     local modern = C_QuestLog and C_QuestLog.GetNumQuestLogEntries and C_QuestLog.GetInfo
     local n = modern and C_QuestLog.GetNumQuestLogEntries() or (GetNumQuestLogEntries and (GetNumQuestLogEntries())) or 0
+    local zone = "Quests"
     for i = 1, n do
-        local qid, header, isComplete
+        local qid, header, isComplete, title, level
         if modern then
             local info = C_QuestLog.GetInfo(i)
-            if info then qid, header = info.questID, info.isHeader end
+            if info then qid, header, title, level = info.questID, info.isHeader, info.title, info.level end
             if qid and C_QuestLog.IsComplete then isComplete = C_QuestLog.IsComplete(qid) end
         elseif GetQuestLogTitle then
-            local _, _, _, isHeader, _, comp, _, questID = GetQuestLogTitle(i)
-            qid, header, isComplete = questID, isHeader, (comp == 1)
+            local t, l, _, isHeader, _, comp, _, questID = GetQuestLogTitle(i)
+            qid, header, isComplete, title, level = questID, isHeader, (comp == 1), t, l
         end
-        if qid and not header then
+        if header then
+            zone = title or zone
+        elseif qid then
             state.inLog[qid] = true
             if isComplete then state.complete[qid] = true end
+            state.list[#state.list + 1] = { q = qid, t = title or questName(qid), l = level or 0, z = zone, c = isComplete and true or false, i = i }
         end
     end
     -- finished quests
@@ -166,6 +173,9 @@ local function buildIndex()
             local sb = safe(QD.startedBy, qid)
             if sb then
                 for _, npc in ipairs(sb[1] or {}) do
+                    local s = starters[npc]
+                    if not s then s = {}; starters[npc] = s end
+                    s[#s + 1] = qid
                     local sp = safe(N.spawns, npc)
                     if type(sp) == "table" then for area in pairs(sp) do addIdx(startIdx, area, qid, npc, 1) end end
                 end
@@ -256,6 +266,65 @@ local function targetsOf(qid)
     return out
 end
 
+function Q:LogList() return state.list or {} end
+
+function Q:SetPin(m, x, y, text, qid)
+    SFP.db.questPin = { m = m, x = x, y = y, text = text, q = qid }
+    wipe(cache)
+    Q:DrawWorldMap()
+end
+
+function Q:ClearPin()
+    SFP.db.questPin = nil
+    wipe(cache)
+    Q:DrawWorldMap()
+end
+function Q:IsComplete(qid) return state.complete[qid] and true or false end
+function Q:Version() return version end
+
+-- where to go for this quest: { m = uiMapID, x, y, text } (turn-in when finished, else the nearest objective)
+function Q:Locate(qid)
+    local QD, N, _, O = dbs()
+    local Z = zoneDB()
+    local function spot(kind, ent)
+        local sp = kind == 1 and safe(N.spawns, ent) or (O and safe(O.spawns, ent))
+        if type(sp) ~= "table" or not (Z and Z.GetUiMapIdByAreaId) then return nil end
+        local px, py
+        local here = C_Map.GetBestMapForUnit("player")
+        local pos = here and C_Map.GetPlayerMapPosition(here, "player")
+        if pos and pos.GetXY then px, py = pos:GetXY() end
+        local best, bd
+        for area, coords in pairs(sp) do
+            local m = safe(function() return Z:GetUiMapIdByAreaId(area) end)
+            local c = type(coords) == "table" and coords[1]
+            if m and c and c[1] and c[1] > 0 then
+                local d = (m == here and px) and ((c[1] / 100 - px) ^ 2 + (c[2] / 100 - py) ^ 2) or 10
+                if not bd or d < bd then best, bd = { m = m, x = c[1] / 100, y = c[2] / 100 }, d end
+            end
+        end
+        return best
+    end
+    if state.complete[qid] then
+        local fb = QD and safe(QD.finishedBy, qid)
+        for kind = 1, 2 do
+            for _, ent in ipairs(fb and fb[kind] or {}) do
+                local p = spot(kind, ent)
+                if p then p.text = "Turn in: " .. entName(kind, ent); return p end
+            end
+        end
+    else
+        for _, t in ipairs(targetsOf(qid)) do
+            local p = spot(t.kind, t.ent)
+            if p then p.text = t.text .. " - " .. entName(t.kind, t.ent); return p end
+        end
+    end
+    if C_QuestLog and C_QuestLog.GetNextWaypoint then
+        local wm, wx, wy = safe(C_QuestLog.GetNextWaypoint, qid)
+        if wm and wx then return { m = wm, x = wx, y = wy, text = "Quest position (from the game)" } end
+    end
+    return nil
+end
+
 -- quests whose objectives involve this monster (for its tooltip)
 function SFP:QuestObjectiveNpc(npcID)
     if not Q.enabled then return nil end
@@ -280,7 +349,7 @@ local function coordsOf(kind, ent, area, limit)
     return out
 end
 
-local function entName(kind, ent)
+entName = function(kind, ent)
     if not kind or kind == 0 then return "" end
     local _, N, _, O = dbs()
     return (kind == 1 and safe(N.name, ent)) or (O and safe(O.name, ent)) or "?"
@@ -294,7 +363,7 @@ function Q:Collect(mapID)
     local area = Z and Z.GetAreaIdByUiMapId and safe(function() return Z:GetAreaIdByUiMapId(mapID) end)
     if not area or area == 0 then cache[key] = false; return nil end
     local QD = dbs()
-    local res = { avail = {}, turnin = {}, obj = {}, area = area }
+    local res = { avail = {}, turnin = {}, obj = {}, area = area, mapID = mapID }
     local trivialOk = SFP.db.questTrivial
 
     -- quests to pick up
@@ -378,6 +447,7 @@ local STYLE = {
     kill   = { tex = RAID .. "8", ring = { 1.0, 0.3, 0.3 } },
     loot   = { tex = RAID .. "3", ring = { 0.4, 1.0, 0.5 } },
     obj    = { tex = RAID .. "6", ring = { 0.4, 0.7, 1.0 } },
+    pin    = { tex = RAID .. "1", ring = { 0.2, 1.0, 1.0 } },
 }
 local DISC = "Interface\\CHARACTERFRAME\\TempPortraitAlphaMask"
 
@@ -405,6 +475,8 @@ local function style(f, m)
     local st
     if m.type == "avail" then st = m.trivial and STYLE.gray or STYLE.avail
     elseif m.type == "turnin" then st = STYLE.turnin
+    elseif m.type == "pin" then st = STYLE.pin
+    elseif m.type == "zone" then st = (m.k == "turn") and STYLE.turnin or STYLE.kill
     else st = STYLE[m.k] or STYLE.kill end
     f.ring:SetVertexColor(st.ring[1], st.ring[2], st.ring[3], 1)
     if st.tex then
@@ -421,6 +493,24 @@ local function tooltip(f)
     local QD = dbs()
     GameTooltip:SetOwner(f, "ANCHOR_RIGHT")
     local title = questName(m.q)
+    if m.type == "zone" then
+        GameTooltip:AddLine(SFP:ZoneName(m.zone), 1, 0.82, 0)
+        GameTooltip:AddLine(m.k == "turn" and "Hand in here" or "Quest work here", 0.8, 0.8, 0.8)
+        for i, q in ipairs(m.quests or {}) do
+            if i > 8 then GameTooltip:AddLine("...", 0.6, 0.6, 0.6); break end
+            GameTooltip:AddLine("- " .. questName(q), 1, 1, 1)
+        end
+        GameTooltip:AddLine("Click: open this zone", 0.5, 0.5, 0.5)
+        GameTooltip:Show()
+        return
+    end
+    if m.type == "pin" then
+        GameTooltip:AddLine("Pinned", 0.2, 1, 1)
+        GameTooltip:AddLine(m.text or "", 1, 1, 1, true)
+        GameTooltip:AddLine("Right-click: remove the pin", 0.5, 0.5, 0.5)
+        GameTooltip:Show()
+        return
+    end
     if m.type == "avail" then
         local c = GetQuestDifficultyColor and GetQuestDifficultyColor(m.lvl or state.level) or { r = 1, g = 0.82, b = 0 }
         GameTooltip:AddLine("[" .. (m.lvl or "?") .. "] " .. title, c.r, c.g, c.b)
@@ -444,7 +534,9 @@ local function wire(f)
     f:SetScript("OnEnter", tooltip)
     f:SetScript("OnLeave", function() GameTooltip:Hide() end)
     f:SetScript("OnMouseUp", function(self, btn)
-        if IsControlKeyDown() and self.m and self.mapID and SFP.SetWaypoint then
+        if btn == "RightButton" and self.m and self.m.type == "pin" then Q:ClearPin(); return end
+        if btn == "LeftButton" and self.m and self.m.type == "zone" and WorldMapFrame and WorldMapFrame.SetMapID then WorldMapFrame:SetMapID(self.m.zone); return end
+        if IsControlKeyDown() and self.m and self.mapID and SFP.SetWaypoint and self.m.type ~= "pin" then
             SFP:SetWaypoint(self.mapID, self.m.x, self.m.y, questName(self.m.q))
         end
     end)
@@ -455,6 +547,10 @@ local function markersOf(res)
     for _, m in ipairs(res.avail) do m.type = "avail"; out[#out + 1] = m end
     for _, m in ipairs(res.turnin) do m.type = "turnin"; out[#out + 1] = m end
     for _, m in ipairs(res.obj) do m.type = "obj"; out[#out + 1] = m end
+    local p = SFP.db and SFP.db.questPin
+    if p and p.m == res.mapID then
+        out[#out + 1] = { type = "pin", k = "pin", q = p.q or 0, ent = 0, kind = 0, x = p.x, y = p.y, text = p.text }
+    end
     return out
 end
 
@@ -469,6 +565,32 @@ local function canvasScale()
     return (sc and sc.GetCanvasScale and sc:GetCanvasScale()) or 1
 end
 
+-- continent / world map: one icon in the middle of every zone that holds quest work
+function Q:DrawContinent(mapID, w, h)
+    if SFP.db.questZones == false or not SFP.IsUnderMap then return end
+    local sets = questZones()
+    local size = max(16, 22 / canvasScale())
+    local function place(zone, qids, kind)
+        if not SFP.IsUnderMap(zone, mapID) then return end
+        local l, r, t, b = C_Map.GetMapRectOnMap(zone, mapID)
+        if not l or r <= l or b <= t then return end
+        wused = wused + 1
+        local f = wpool[wused]
+        if not f then f = newIcon(layer); wire(f); wpool[wused] = f end
+        f.mapID = mapID
+        style(f, { type = "zone", k = kind, zone = zone, quests = qids })
+        f:SetSize(size, size); f.core:SetSize(size - 4, size - 4); f.pic:SetSize(size - 6, size - 6)
+        f:ClearAllPoints()
+        f:SetPoint("CENTER", layer, "TOPLEFT", ((l + r) / 2) * w, -((t + b) / 2) * h)
+        f:SetFrameLevel(layer:GetFrameLevel() + 2)
+        f:Show()
+    end
+    for zone, qids in pairs(sets.obj) do place(zone, qids, "kill") end
+    for zone, qids in pairs(sets.turn) do
+        if not sets.obj[zone] then place(zone, qids, "turn") end
+    end
+end
+
 function Q:DrawWorldMap()
     if not layer then return end
     for i = 1, #wpool do wpool[i]:Hide() end
@@ -476,9 +598,9 @@ function Q:DrawWorldMap()
     if not Q.enabled or not WorldMapFrame:IsShown() then return end
     local mapID = WorldMapFrame:GetMapID()
     local res = self:Collect(mapID)
-    if not res then return end
     local w, h = layer:GetWidth(), layer:GetHeight()
     if w <= 0 then return end
+    if not res then self:DrawContinent(mapID, w, h); return end
     local size = max(14, 20 / canvasScale())
     for _, m in ipairs(markersOf(res)) do
         wused = wused + 1
@@ -486,7 +608,7 @@ function Q:DrawWorldMap()
         if not f then f = newIcon(layer); wire(f); wpool[wused] = f end
         f.mapID = mapID
         style(f, m)
-        local s = (m.type == "obj") and size * 0.8 or size
+        local s = (m.type == "obj") and size * 0.8 or (m.type == "pin" and size * 1.5 or size)
         f:SetSize(s, s)
         f.core:SetSize(s - 4, s - 4)
         f.pic:SetSize(s - 6, s - 6)
@@ -567,6 +689,131 @@ local function mupdate()
 end
 
 ---------------------------------------------------------------------------
+-- icons over the heads of quest monsters (nameplates)
+---------------------------------------------------------------------------
+local finishSet, objSet = {}, {}
+local plateIcons = {}     -- unit token -> icon frame
+
+local function rebuildSets()
+    wipe(finishSet); wipe(objSet)
+    local QD = dbs()
+    if not QD then return end
+    for qid in pairs(state.complete) do
+        local fb = safe(QD.finishedBy, qid)
+        for _, npc in ipairs(fb and fb[1] or {}) do finishSet[npc] = true end
+    end
+    for qid in pairs(state.inLog) do
+        if not state.complete[qid] then
+            for _, t in ipairs(targetsOf(qid)) do if t.kind == 1 then objSet[t.ent] = true end end
+        end
+    end
+end
+
+local function startsAvailable(npc)
+    local l = starters[npc]
+    if not l then return false end
+    for i = 1, min(#l, 12) do
+        if eligible(l[i], SFP.db.questTrivial) then return true end
+    end
+    return false
+end
+
+local function headIcon(npc)
+    if finishSet[npc] then return "turnin" end
+    if SFP.db.questHeads ~= false and startsAvailable(npc) then return "avail" end
+    if objSet[npc] then return "kill" end
+    return nil
+end
+
+local function updatePlate(unit)
+    local f = plateIcons[unit]
+    local guid = unit and UnitGUID(unit)
+    local npc
+    if guid then
+        local t, _, _, _, _, id = strsplit("-", guid)
+        if t == "Creature" or t == "Vehicle" then npc = tonumber(id) end
+    end
+    local what = Q.enabled and npc and not UnitIsPlayer(unit) and headIcon(npc) or nil
+    if not what then
+        if f then f:Hide() end
+        return
+    end
+    local plate = C_NamePlate and C_NamePlate.GetNamePlateForUnit and C_NamePlate.GetNamePlateForUnit(unit)
+    if not plate then return end
+    if not f then
+        f = newIcon(UIParent)
+        f:EnableMouse(false)
+        plateIcons[unit] = f
+    end
+    f:SetParent(plate)
+    f:ClearAllPoints()
+    f:SetPoint("BOTTOM", plate, "TOP", 0, 4)
+    f:SetSize(22, 22); f.core:SetSize(18, 18); f.pic:SetSize(14, 14)
+    style(f, { type = (what == "kill") and "obj" or what, k = "kill", trivial = false })
+    f.m = nil
+    f:Show()
+end
+
+function Q:UpdatePlates()
+    if not (C_NamePlate and C_NamePlate.GetNamePlates) then return end
+    for _, plate in ipairs(C_NamePlate.GetNamePlates() or {}) do
+        local unit = plate.namePlateUnitToken or (plate.UnitFrame and plate.UnitFrame.unit)
+        if unit then updatePlate(unit) end
+    end
+end
+
+---------------------------------------------------------------------------
+-- translucent highlight of the zones that hold your quests (continent / world maps)
+---------------------------------------------------------------------------
+local zoneSets = { v = -1 }
+local function questZones()
+    if zoneSets.v == version then return zoneSets end
+    zoneSets = { v = version, obj = {}, turn = {} }
+    local Z = zoneDB()
+    local QD, N, _, O = dbs()
+    if not (Z and Z.GetUiMapIdByAreaId and QD) then return zoneSets end
+    local function mark(set, qid, kind, ent)
+        local sp = kind == 1 and safe(N.spawns, ent) or (O and safe(O.spawns, ent))
+        if type(sp) == "table" then
+            for area in pairs(sp) do
+                local m = safe(function() return Z:GetUiMapIdByAreaId(area) end)
+                if m then
+                    local l = set[m]
+                    if not l then l = {}; set[m] = l end
+                    local have = false
+                    for _, q in ipairs(l) do if q == qid then have = true; break end end
+                    if not have then l[#l + 1] = qid end
+                end
+            end
+        end
+    end
+    for qid in pairs(state.inLog) do
+        if state.complete[qid] then
+            local fb = safe(QD.finishedBy, qid)
+            for kind = 1, 2 do for _, ent in ipairs(fb and fb[kind] or {}) do mark(zoneSets.turn, qid, kind, ent) end end
+        else
+            for _, t in ipairs(targetsOf(qid)) do mark(zoneSets.obj, qid, t.kind, t.ent) end
+        end
+    end
+    return zoneSets
+end
+
+-- called from the world map overlay: tints every zone under the shown map that holds quest work
+function Q:DrawZones(mapID)
+    if not (Q.enabled and SFP.db.questZones ~= false and SFP.DrawZoneFill and SFP.IsUnderMap) then return end
+    local sets = questZones()
+    local info = C_Map.GetMapInfo(mapID)
+    local zoneType = Enum and Enum.UIMapType and Enum.UIMapType.Zone or 3
+    if info and info.mapType == zoneType then return end   -- a zone map shows the markers instead
+    for zone in pairs(sets.obj) do
+        if SFP.IsUnderMap(zone, mapID) then SFP.DrawZoneFill(mapID, zone, 1.0, 0.6, 0.15, 0.17) end
+    end
+    for zone in pairs(sets.turn) do
+        if not sets.obj[zone] and SFP.IsUnderMap(zone, mapID) then SFP.DrawZoneFill(mapID, zone, 0.2, 0.9, 1.0, 0.17) end
+    end
+end
+
+---------------------------------------------------------------------------
 -- control
 ---------------------------------------------------------------------------
 local pending
@@ -577,6 +824,9 @@ function Q:Refresh()
         pending = false
         if not Q.enabled then return end
         SFP:Safe("quest state", refreshState)
+        SFP:Safe("quest sets", rebuildSets)
+        SFP:Safe("quest heads", function() Q:UpdatePlates() end)
+        if SFP.RefreshWorldMap then SFP:Safe("quest zones", SFP.RefreshWorldMap) end
         SFP:Safe("quest world map", function() Q:DrawWorldMap() end)
         SFP:Safe("quest minimap", mupdate)
     end)
@@ -633,6 +883,8 @@ SFP:OnLogin(function()
     if SFP.db.questMarkers == nil then SFP.db.questMarkers = true end
     if SFP.db.questMinimap == nil then SFP.db.questMinimap = true end
     if SFP.db.questTrivial == nil then SFP.db.questTrivial = false end
+    if SFP.db.questHeads == nil then SFP.db.questHeads = true end
+    if SFP.db.questZones == nil then SFP.db.questZones = true end
     if SFP.db.questAvail == nil then SFP.db.questAvail = false end -- only quests you have picked up
     Q.enabled = SFP.db.questMarkers and SFP:HasQuestieDB() and true or false
     if not SFP:HasQuestieDB() then return end
@@ -647,6 +899,20 @@ SFP:OnLogin(function()
         WorldMapFrame:HookScript("OnShow", function() C_Timer.After(0, function() Q:DrawWorldMap() end) end)
         canvas:HookScript("OnSizeChanged", function() Q:DrawWorldMap() end)
     end
+
+    -- friendly monsters only get a nameplate (and so an icon) when the game shows friendly NPC plates
+    if SFP.db.questHeads ~= false and not SFP.db.platesSet then
+        SFP.db.platesSet = true
+        pcall(SetCVar, "nameplateShowFriendlyNPCs", 1)
+    end
+    local pev = CreateFrame("Frame")
+    pcall(pev.RegisterEvent, pev, "NAME_PLATE_UNIT_ADDED")
+    pcall(pev.RegisterEvent, pev, "NAME_PLATE_UNIT_REMOVED")
+    pev:SetScript("OnEvent", function(_, event, unit)
+        if not Q.enabled or not unit then return end
+        if event == "NAME_PLATE_UNIT_ADDED" then updatePlate(unit)
+        elseif plateIcons[unit] then plateIcons[unit]:Hide() end
+    end)
 
     local ev = CreateFrame("Frame")
     for _, e in ipairs({ "QUEST_LOG_UPDATE", "QUEST_ACCEPTED", "QUEST_TURNED_IN", "QUEST_REMOVED", "QUEST_COMPLETE",

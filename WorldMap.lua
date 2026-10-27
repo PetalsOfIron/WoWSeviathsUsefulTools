@@ -749,7 +749,9 @@ local function pointInZone(parentMap, zoneID, l, r, t, b)
     end
 end
 
-local function drawZoneFill(parentMap, zoneID)
+SFP.IsUnderMap = function(z, m) return isUnder(z, m) end
+
+local function drawZoneFill(parentMap, zoneID, cr, cg, cb, ca)
     local l, r, t, b = C_Map.GetMapRectOnMap(zoneID, parentMap)
     if not l or r <= l or b <= t then return end
     local w, h = overlay:GetWidth(), overlay:GetHeight()
@@ -769,8 +771,9 @@ local function drawZoneFill(parentMap, zoneID)
         tex:SetSize(texX * w, texY * h)
         tex:SetPoint("TOPLEFT", overlay, "TOPLEFT", scrollX * w, -scrollY * h)
     end
-    tex:SetVertexColor(c.r, c.g, c.b, 0.45)
+    tex:SetVertexColor(cr or c.r, cg or c.g, cb or c.b, ca or 0.45)
 end
+SFP.DrawZoneFill = drawZoneFill
 
 ---------------------------------------------------------------------------
 -- Optional item panel (off by default; turn on in the browser)
@@ -1085,6 +1088,9 @@ refresh = function()
     panel:Hide()
     if gatherPanel then gatherPanel:Hide() end
     for _, e in ipairs(edges) do e:Hide() end
+    if WorldMapFrame:IsShown() and WorldMapFrame:GetMapID() and SFP.QuestMarkers then
+        SFP:Safe("quest zones", SFP.QuestMarkers.DrawZones, SFP.QuestMarkers, WorldMapFrame:GetMapID())
+    end
     if not SFP.db.mapOverlay or not WorldMapFrame:IsShown() then return end
 
     local mapID = WorldMapFrame:GetMapID()
