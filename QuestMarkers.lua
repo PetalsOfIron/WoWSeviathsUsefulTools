@@ -467,7 +467,7 @@ function Q:Collect(mapID)
     local Z = zoneDB()
     local area = Z and Z.GetAreaIdByUiMapId and safe(function() return Z:GetAreaIdByUiMapId(mapID) end)
     if not area or area == 0 then cache[key] = false; return nil end
-    local QD = dbs()
+    local QD, N, _, O = dbs()
     local res = { avail = {}, turnin = {}, obj = {}, area = area, mapID = mapID }
     local trivialOk = SFP.db.questTrivial
 

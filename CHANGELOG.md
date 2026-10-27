@@ -1,5 +1,8 @@
 # SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
 
+## 1.26.3-mop
+- Fix error on the minimap quest areas
+
 ## 1.26.2-mop
 - Fix error in quest sets (monster names from quest text)
 
