@@ -510,6 +510,7 @@ local function newIcon(parent)
 end
 
 local function fit(f, s)
+    if f.blob then f:SetSize(s, s); return end
     f:SetSize(s, s)
     f.core:SetSize(s - 4, s - 4)
     local p = f.bare and s or (s - 6)
@@ -517,6 +518,17 @@ local function fit(f, s)
 end
 
 local function style(f, m)
+    if m.blob then
+        -- quest area: a soft translucent disc over the places where the targets are (retail style)
+        f.blob, f.bare = true, false
+        f.ring:Show(); f.core:Hide(); f.pic:Hide(); f.glyph:Hide()
+        local c = m.zoneKind == "turn" and { 0.3, 0.85, 1.0 } or { 1.0, 0.85, 0.2 }
+        f.ring:SetVertexColor(c[1], c[2], c[3], m.alpha or 0.26)
+        f.m = m
+        return
+    end
+    f.blob = false
+    f.core:Show()
     local st
     if m.type == "avail" then st = m.trivial and STYLE.gray or STYLE.avail
     elseif m.type == "turnin" then st = STYLE.turnin
@@ -596,11 +608,11 @@ local function wire(f)
     end)
 end
 
-local function markersOf(res)
+local function markersOf(res, skipObj)
     local out = {}
     for _, m in ipairs(res.avail) do m.type = "avail"; out[#out + 1] = m end
     for _, m in ipairs(res.turnin) do m.type = "turnin"; out[#out + 1] = m end
-    for _, m in ipairs(res.obj) do m.type = "obj"; out[#out + 1] = m end
+    for _, m in ipairs(res.obj) do m.type = "obj"; if not skipObj then out[#out + 1] = m end end
     local p = SFP.db and SFP.db.questPin
     if p and p.m == res.mapID then
         out[#out + 1] = { type = "pin", k = "pin", q = p.q or 0, ent = 0, kind = 0, x = p.x, y = p.y, text = p.text }
@@ -633,8 +645,8 @@ function Q:DrawContinent(mapID, w, h)
         local f = wpool[wused]
         if not f then f = newIcon(layer); wire(f); wpool[wused] = f end
         f.mapID = mapID
-        style(f, { type = "zone", k = kind, zone = zone, quests = qids })
-        fit(f, size)
+        style(f, { type = "zone", k = kind, zone = zone, quests = qids, blob = (kind == "kill"), zoneKind = kind, alpha = 0.3 })
+        fit(f, kind == "kill" and size * 1.8 or size)
         f:ClearAllPoints()
         f:SetPoint("CENTER", layer, "TOPLEFT", ((l + r) / 2) * w, -((t + b) / 2) * h)
         f:SetFrameLevel(layer:GetFrameLevel() + 2)
@@ -658,7 +670,36 @@ function Q:DrawWorldMap()
     if not res then self:DrawContinent(mapID, w, h); return end
     local k = SFP.db.questIconScale or 0.7
     local size = max(10 * k, 20 / canvasScale() * k)
-    for _, m in ipairs(markersOf(res)) do
+    -- kill / collect targets: one translucent area per cluster instead of an icon per spawn point
+    local blobs = {}
+    for _, m in ipairs(res.obj) do
+        local hit
+        for _, b in ipairs(blobs) do
+            if b.q == m.q and (b.sx / b.n - m.x) ^ 2 + (b.sy / b.n - m.y) ^ 2 < 0.07 ^ 2 then hit = b; break end
+        end
+        if hit then
+            hit.n = hit.n + 1; hit.sx = hit.sx + m.x; hit.sy = hit.sy + m.y
+            if #hit.texts < 4 and m.text then hit.texts[#hit.texts + 1] = m.text end
+        else
+            blobs[#blobs + 1] = { q = m.q, n = 1, sx = m.x, sy = m.y, k = m.k, ent = m.ent, kind = m.kind, texts = { m.text } }
+        end
+    end
+    for _, b in ipairs(blobs) do
+        wused = wused + 1
+        local f = wpool[wused]
+        if not f then f = newIcon(layer); wire(f); wpool[wused] = f end
+        f.mapID = mapID
+        local m = { type = "obj", blob = true, q = b.q, k = b.k, ent = b.ent, kind = b.kind, x = b.sx / b.n, y = b.sy / b.n,
+            text = table.concat(b.texts, ", "), alpha = 0.26 }
+        style(f, m)
+        local r = min(0.09, 0.028 + 0.012 * math.sqrt(b.n))
+        f:SetSize(r * 2 * w, r * 2 * w)
+        f:ClearAllPoints()
+        f:SetPoint("CENTER", layer, "TOPLEFT", m.x * w, -m.y * h)
+        f:SetFrameLevel(layer:GetFrameLevel() + 1)
+        f:Show()
+    end
+    for _, m in ipairs(markersOf(res, true)) do
         wused = wused + 1
         local f = wpool[wused]
         if not f then f = newIcon(layer); wire(f); wpool[wused] = f end
@@ -730,8 +771,9 @@ local function mupdate()
             local f = table.remove(mpool)
             if not f then f = newIcon(UIParent); wire(f) end
             f.mapID = mapID
+            if m.type == "obj" then m.blob = true; m.alpha = 0.3 end
             style(f, m)
-            fit(f, (m.type == "avail" and 17 or 15) * (SFP.db.questIconScale or 0.7))
+            fit(f, (m.type == "obj" and 34 or (m.type == "avail" and 17 or 15)) * (SFP.db.questIconScale or 0.7))
             f:Show()
             if pcall(h.AddMinimapIconMap, h, Q, f, mapID, m.x, m.y, false, false) then
                 mshown[key] = f

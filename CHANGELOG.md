@@ -1,5 +1,8 @@
 # SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
 
+## 1.25.2-mop
+- Kill / collect targets of your quests are drawn as translucent quest areas like the retail map (no skull icons); on the minimap they form areas too
+
 ## 1.25.1-mop
 - Quest icons on the map and minimap are smaller (/sfp questscale 0.7, 0.3 to 2)
 
