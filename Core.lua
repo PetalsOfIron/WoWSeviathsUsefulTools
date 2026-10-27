@@ -708,6 +708,15 @@ SlashCmdList["SEVIATHSUSEFULTOOLS"] = function(msg)
         if SFP.QuestUI then SFP.QuestUI:Command(rest) end
     elseif cmd == "questdebug" then
         if SFP.QuestMarkers then SFP.QuestMarkers:Debug() end
+    elseif cmd == "questscale" then
+        local v = tonumber(rest)
+        if v then
+            SFP.db.questIconScale = math.max(0.3, math.min(2, v))
+            if SFP.QuestMarkers then SFP.QuestMarkers:Refresh() end
+            SFP:Print("Quest icon size " .. SFP.db.questIconScale .. " (default 0.7)")
+        else
+            SFP:Print("/sfp questscale 0.7   - size of the quest icons on the map and minimap")
+        end
     elseif cmd == "quests" then
         if SFP.QuestMarkers then
             SFP.QuestMarkers:SetEnabled(not (SFP.db.questMarkers ~= false))

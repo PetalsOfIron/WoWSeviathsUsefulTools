@@ -1,5 +1,8 @@
 # SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
 
+## 1.25.1-mop
+- Quest icons on the map and minimap are smaller (/sfp questscale 0.7, 0.3 to 2)
+
 ## 1.25.0-mop
 - Quests you can still pick up show again on the zone map, minimap and over their givers, with Blizzard's own yellow "!" icon (no custom marker); low-level ones are greyed
 

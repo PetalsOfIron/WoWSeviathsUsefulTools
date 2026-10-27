@@ -623,7 +623,8 @@ end
 function Q:DrawContinent(mapID, w, h)
     if SFP.db.questZones == false or not SFP.IsUnderMap then return end
     local sets = questZones()
-    local size = max(16, 22 / canvasScale())
+    local k = SFP.db.questIconScale or 0.7
+    local size = max(11 * k, 22 / canvasScale() * k)
     local function place(zone, qids, kind)
         if not SFP.IsUnderMap(zone, mapID) then return end
         local l, r, t, b = C_Map.GetMapRectOnMap(zone, mapID)
@@ -655,7 +656,8 @@ function Q:DrawWorldMap()
     local w, h = layer:GetWidth(), layer:GetHeight()
     if w <= 0 then return end
     if not res then self:DrawContinent(mapID, w, h); return end
-    local size = max(14, 20 / canvasScale())
+    local k = SFP.db.questIconScale or 0.7
+    local size = max(10 * k, 20 / canvasScale() * k)
     for _, m in ipairs(markersOf(res)) do
         wused = wused + 1
         local f = wpool[wused]
@@ -729,7 +731,7 @@ local function mupdate()
             if not f then f = newIcon(UIParent); wire(f) end
             f.mapID = mapID
             style(f, m)
-            fit(f, m.type == "avail" and 17 or 15)
+            fit(f, (m.type == "avail" and 17 or 15) * (SFP.db.questIconScale or 0.7))
             f:Show()
             if pcall(h.AddMinimapIconMap, h, Q, f, mapID, m.x, m.y, false, false) then
                 mshown[key] = f
