@@ -57,7 +57,14 @@ def fetch(kind, id):
         t = re.search(r"<title>([^<]*?)(?: - [^<]*)?</title>", h)
         out["name"] = t.group(1).strip() if t else ""
         if kind in "no":
-            out["spawns"] = {k: [c for v in vs for c in v.get("coords", [])][:60] for k, vs in mapper(h).items()}
+            sp = {}
+            for k, vs in mapper(h).items():
+                if isinstance(vs, dict):
+                    vs = [vs]
+                if not isinstance(vs, list):
+                    continue
+                sp[k] = [c for v in vs if isinstance(v, dict) for c in v.get("coords", [])][:60]
+            out["spawns"] = sp
         else:
             d = sorted(sm.rows(h, 'dropped-by'), key=lambda r: -(r.get('count') or 0))
             out["npcs"] = [[r.get('id'), r.get('name')] for r in d[:8] if r.get('id')]
