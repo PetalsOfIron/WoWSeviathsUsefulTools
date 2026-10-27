@@ -1,5 +1,8 @@
 # SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
 
+## 1.26.1-mop
+- Quests whose collect item has no known source now mark the monsters named in the quest text (e.g. Tainted Black Bears for Demoniac Vessel): head marks, tooltip line, map areas
+
 ## 1.26.0-mop
 - Quests without a known kill / collect position (item objectives with no source, exploration and special
   objectives) now show an area: the exploration areas and special objective areas of the database were
