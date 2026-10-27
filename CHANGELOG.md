@@ -1,5 +1,8 @@
 # SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
 
+## 1.21.1-mop
+- Quest markers show only for quests you have picked up (kill / collect targets and turn-in) in their zone; the gold "!" for quests you could still pick up is off by default (Settings: "Show quests I can pick up")
+
 ## 1.21.0-mop
 - Quest markers: the addon now draws quests itself (data: QuestieDB) with its own design - gold "!"
   for quests you can pick up (level, race, class, prerequisites checked), cyan "?" to turn in, skull /

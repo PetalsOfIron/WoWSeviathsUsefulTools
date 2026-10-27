@@ -297,7 +297,7 @@ function Q:Collect(mapID)
     local trivialOk = SFP.db.questTrivial
 
     -- quests to pick up
-    local l = startIdx[area]
+    local l = SFP.db.questAvail and startIdx[area]
     if l then
         local seen = {}
         for i = 1, #l, 3 do
@@ -587,6 +587,7 @@ SFP:OnLogin(function()
     if SFP.db.questMarkers == nil then SFP.db.questMarkers = true end
     if SFP.db.questMinimap == nil then SFP.db.questMinimap = true end
     if SFP.db.questTrivial == nil then SFP.db.questTrivial = false end
+    if SFP.db.questAvail == nil then SFP.db.questAvail = false end -- only quests you have picked up
     Q.enabled = SFP.db.questMarkers and SFP:HasQuestieDB() and true or false
     if not SFP:HasQuestieDB() then return end
 
