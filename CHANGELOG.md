@@ -1,5 +1,8 @@
 # SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
 
+## 1.26.10-mop
+- Enemy nameplates are switched on once when quest head marks are on (they were off, so no mark could be shown)
+
 ## 1.26.9-mop
 - Head marks look up nameplates by unit token; /sfp plates shows the enemy nameplate setting
 

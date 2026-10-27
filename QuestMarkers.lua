@@ -1163,6 +1163,11 @@ SFP:OnLogin(function()
         SFP.db.platesSet = true
         pcall(SetCVar, "nameplateShowFriendlyNPCs", 1)
     end
+    -- enemy nameplates are what carry the marks over quest monsters; switch them on once (V toggles them)
+    if SFP.db.questHeads ~= false and not SFP.db.enemyPlatesSet then
+        SFP.db.enemyPlatesSet = true
+        if not InCombatLockdown() then pcall(SetCVar, "nameplateShowEnemies", 1) end
+    end
     local pev = CreateFrame("Frame")
     pcall(pev.RegisterEvent, pev, "NAME_PLATE_UNIT_ADDED")
     pcall(pev.RegisterEvent, pev, "NAME_PLATE_UNIT_REMOVED")
