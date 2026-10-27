@@ -1,5 +1,8 @@
 # SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
 
+## 1.26.9-mop
+- Head marks look up nameplates by unit token; /sfp plates shows the enemy nameplate setting
+
 ## 1.26.8-mop
 - Quest monsters get the yellow "!" over their heads (bigger)
 

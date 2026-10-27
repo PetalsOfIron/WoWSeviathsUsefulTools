@@ -975,7 +975,21 @@ end
 
 function Q:PlateDebug()
     local plates = C_NamePlate and C_NamePlate.GetNamePlates and C_NamePlate.GetNamePlates() or {}
-    SFP:Print("nameplates: " .. #plates .. ", quests matched by text: " .. #textQuests)
+    local tokens = 0
+    for i = 1, 40 do if UnitExists("nameplate" .. i) then tokens = tokens + 1 end end
+    local cv = function(n) local ok, v = pcall(GetCVar, n); return ok and tostring(v) or "?" end
+    SFP:Print("nameplates: " .. #plates .. ", nameplate units: " .. tokens .. ", enemy plates cvar " ..
+        cv("nameplateShowEnemies") .. ", quests matched by text: " .. #textQuests)
+    for i = 1, 40 do
+        local unit = "nameplate" .. i
+        if UnitExists(unit) then
+            local nm = UnitName(unit)
+            local f = plateIcons[unit]
+            SFP:Print(unit .. " " .. tostring(nm) .. " match=" .. tostring(nameQuests(nm) ~= nil) ..
+                " icon=" .. tostring(f and f:IsShown()) .. (f and (" vis=" .. tostring(f:IsVisible())) or ""))
+        end
+    end
+    plates = {}
     for _, plate in ipairs(plates) do
         local unit = plate.namePlateUnitToken or (plate.UnitFrame and plate.UnitFrame.unit)
         local nm = unit and UnitName(unit)
@@ -986,10 +1000,11 @@ function Q:PlateDebug()
 end
 
 function Q:UpdatePlates()
-    if not (C_NamePlate and C_NamePlate.GetNamePlates) then return end
-    for _, plate in ipairs(C_NamePlate.GetNamePlates() or {}) do
-        local unit = plate.namePlateUnitToken or (plate.UnitFrame and plate.UnitFrame.unit)
-        if unit then updatePlate(unit) end
+    if not (C_NamePlate and C_NamePlate.GetNamePlateForUnit) then return end
+    -- by token: works whatever the plate list returns (and with nameplate addons)
+    for i = 1, 40 do
+        local unit = "nameplate" .. i
+        if UnitExists(unit) then updatePlate(unit) end
     end
 end
 
