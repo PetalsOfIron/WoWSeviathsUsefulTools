@@ -235,39 +235,6 @@ local function objectiveDone(objs, name)
     return false
 end
 
--- monster names (lowercase) -> npc ids, built in the background; used when a quest's collect item has no known
--- source but its text names the monsters ("Kill the Tainted Black Bears ...")
-local nameIdx, nameIdxState = {}, 0
-local function buildNameIdx()
-    if nameIdxState ~= 0 then return end
-    local QD, N = dbs()
-    local ids = QD and N and safe(N.GetAllIds)
-    if not ids then return end
-    nameIdxState = 1
-    local i, total = 1, #ids
-    local function step()
-        for _ = 1, 400 do
-            local id = ids[i]
-            if not id then break end
-            local nm = safe(N.name, id)
-            if nm and #nm >= 6 then
-                local k = nm:lower()
-                local l = nameIdx[k]
-                if not l then l = {}; nameIdx[k] = l end
-                if #l < 12 then l[#l + 1] = id end
-            end
-            i = i + 1
-        end
-        if i <= total then C_Timer.After(0.03, step)
-        else
-            nameIdxState = 2
-            wipe(targetsCache)
-            if Q.Refresh then Q:Refresh() end
-        end
-    end
-    C_Timer.After(2, step)
-end
-
 -- { {k = "kill"|"loot"|"obj", ent, kind (1 npc / 2 object), text} } for one active quest
 local function targetsOf(qid)
     local c = targetsCache[qid]
@@ -303,42 +270,6 @@ local function targetsOf(qid)
                     out[#out + 1] = { k = "loot", ent = objs[j], kind = 2, text = "Collect " .. nm }
                 end
             end
-        end
-    end
-    -- collect objectives without a known source: monsters named in the quest text
-    local obx = QD and safe(QD.objectives, qid)
-    if obx and #(obx[3] or {}) > 0 then
-        local has = false
-        for _, t in ipairs(out) do if t.k == "loot" then has = true; break end end
-        unsourced = not has
-    end
-    if unsourced or #out == 0 then
-        if nameIdxState == 2 then
-            local tl = QD and safe(QD.objectivesText, qid)
-            local txt = (type(tl) == "table" and table.concat(tl, " ") or tl or ""):lower()
-            local nameds = {}
-            for _, o in ipairs(obx and obx[1] or {}) do nameds[#nameds + 1] = o[1] end
-            if txt ~= "" and (unsourced or #out == 0) then
-                for nm, l in pairs(nameIdx) do
-                    -- singular name inside the (plural) text, as a whole word
-                    local from = txt:find(nm, 1, true)
-                    if from then
-                        local before = from == 1 or not txt:sub(from - 1, from - 1):match("%a")
-                        if before then
-                            for _, id in ipairs(l) do
-                                out[#out + 1] = { k = "kill", ent = id, kind = 1, text = "Kill " .. nm:gsub("^%l", string.upper) }
-                            end
-                        end
-                    end
-                end
-            end
-        else
-            buildNameIdx()
-            -- try again once the index is ready; do not cache this partial answer
-            for _, st in ipairs(QD and safe(QD.spots, qid) or {}) do
-                out[#out + 1] = { k = "obj", kind = 3, ent = 0, sp = st.sp, text = (st.text ~= "" and st.text or "Go to the marked area") }
-            end
-            return out
         end
     end
     for _, st in ipairs(QD and safe(QD.spots, qid) or {}) do

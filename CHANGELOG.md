@@ -1,5 +1,8 @@
 # SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
 
+## 1.26.5-mop
+- Fix: random monsters from the name search hid the quest-text matching, so quest monsters got no head mark or tooltip line
+
 ## 1.26.4-mop
 - Head marks and tooltip line for monsters named in the quest text, even when the monster is not in the database
 
