@@ -1,5 +1,8 @@
 # SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
 
+## 1.26.2-mop
+- Fix error in quest sets (monster names from quest text)
+
 ## 1.26.1-mop
 - Quests whose collect item has no known source now mark the monsters named in the quest text (e.g. Tainted Black Bears for Demoniac Vessel): head marks, tooltip line, map areas
 

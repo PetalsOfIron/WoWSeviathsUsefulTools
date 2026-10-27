@@ -314,7 +314,8 @@ local function targetsOf(qid)
     end
     if unsourced or #out == 0 then
         if nameIdxState == 2 then
-            local txt = ((QD and safe(QD.objectivesText, qid)) or ""):lower()
+            local tl = QD and safe(QD.objectivesText, qid)
+            local txt = (type(tl) == "table" and table.concat(tl, " ") or tl or ""):lower()
             local nameds = {}
             for _, o in ipairs(obx and obx[1] or {}) do nameds[#nameds + 1] = o[1] end
             if txt ~= "" and (unsourced or #out == 0) then
