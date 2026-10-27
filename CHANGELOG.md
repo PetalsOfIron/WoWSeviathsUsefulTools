@@ -1,5 +1,8 @@
 # SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
 
+## 1.21.2-mop
+- Quests of your log that the database cannot place on a map (cross-zone turn-ins, missing spawns) are placed with the game's own quest position; /sfp questdebug explains what the markers see
+
 ## 1.21.1-mop
 - Quest markers show only for quests you have picked up (kill / collect targets and turn-in) in their zone; the gold "!" for quests you could still pick up is off by default (Settings: "Show quests I can pick up")
 

@@ -281,6 +281,7 @@ local function coordsOf(kind, ent, area, limit)
 end
 
 local function entName(kind, ent)
+    if not kind or kind == 0 then return "" end
     local _, N, _, O = dbs()
     return (kind == 1 and safe(N.name, ent)) or (O and safe(O.name, ent)) or "?"
 end
@@ -336,6 +337,29 @@ function Q:Collect(mapID)
                         res.obj[#res.obj + 1] = { q = qid, k = t.k, ent = t.ent, kind = t.kind, x = c[1], y = c[2], text = t.text }
                     end
                 end
+            end
+        end
+    end
+    -- quests in your log with no marker here: ask the game where it wants you (quest area / waypoint)
+    local placed = {}
+    for _, m in ipairs(res.turnin) do placed[m.q] = true end
+    for _, m in ipairs(res.obj) do placed[m.q] = true end
+    local onMap = C_QuestLog and C_QuestLog.GetQuestsOnMap and safe(C_QuestLog.GetQuestsOnMap, mapID)
+    local byQuest = {}
+    for _, e in ipairs(onMap or {}) do if e.questID then byQuest[e.questID] = e end end
+    for qid in pairs(state.inLog) do
+        if not placed[qid] then
+            local x, y
+            local wp = C_QuestLog and C_QuestLog.GetNextWaypoint
+            if wp then
+                local wm, wx, wy = safe(wp, qid)
+                if wm == mapID and wx then x, y = wx, wy end
+            end
+            if not x and byQuest[qid] then x, y = byQuest[qid].x, byQuest[qid].y end
+            if x then
+                local done = state.complete[qid]
+                local m = { q = qid, k = "obj", ent = 0, kind = 0, x = x, y = y, text = done and "Ready to turn in (position from the game)" or "Quest area (position from the game)" }
+                if done then res.turnin[#res.turnin + 1] = m else res.obj[#res.obj + 1] = m end
             end
         end
     end
@@ -556,6 +580,28 @@ function Q:Refresh()
         SFP:Safe("quest world map", function() Q:DrawWorldMap() end)
         SFP:Safe("quest minimap", mupdate)
     end)
+end
+
+function Q:Debug()
+    local QD, N = dbs()
+    SFP:Print("Quest markers: enabled=" .. tostring(Q.enabled) .. ", indexed=" .. tostring(indexed) .. ", database=" .. tostring(SFP:HasQuestieDB()))
+    local mapID = WorldMapFrame and WorldMapFrame:IsShown() and WorldMapFrame:GetMapID() or C_Map.GetBestMapForUnit("player")
+    local Z = zoneDB()
+    local area = Z and Z.GetAreaIdByUiMapId and safe(function() return Z:GetAreaIdByUiMapId(mapID) end)
+    SFP:Print("map " .. tostring(mapID) .. " -> area " .. tostring(area))
+    local n = 0
+    for qid in pairs(state.inLog) do
+        n = n + 1
+        local fb = QD and safe(QD.finishedBy, qid)
+        local ob = QD and safe(QD.objectives, qid)
+        local nf = (fb and #(fb[1] or {}) or 0) + (fb and #(fb[2] or {}) or 0)
+        local no = 0
+        for k = 1, 6 do no = no + #((ob and ob[k]) or {}) end
+        SFP:Print(("%d %s: %s, finishers %d, objectives %d"):format(qid, questName(qid), state.complete[qid] and "complete" or "open", nf, no))
+    end
+    SFP:Print(n .. " quests in the log")
+    local res = Q:Collect(mapID)
+    if res then SFP:Print(("here: %d turn-in, %d objective markers"):format(#res.turnin, #res.obj)) else SFP:Print("here: no markers (not a zone map or no data)") end
 end
 
 function Q:SetEnabled(on)

@@ -702,6 +702,8 @@ SlashCmdList["SEVIATHSUSEFULTOOLS"] = function(msg)
             local pct, mats = SFP:ScanProgress()
             SFP:Print(("Item scan: %d%% of the item IDs asked, %d crafting materials known."):format(pct, mats))
         end
+    elseif cmd == "questdebug" then
+        if SFP.QuestMarkers then SFP.QuestMarkers:Debug() end
     elseif cmd == "quests" then
         if SFP.QuestMarkers then
             SFP.QuestMarkers:SetEnabled(not (SFP.db.questMarkers ~= false))
