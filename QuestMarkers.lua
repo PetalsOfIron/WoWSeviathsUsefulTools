@@ -962,9 +962,14 @@ local function updatePlate(unit)
     f:SetIgnoreParentScale(true)
     f:ClearAllPoints()
     f:SetPoint("BOTTOM", anchor, "TOP", 0, 18)
-    style(f,  { type = (what == "kill") and "obj" or what, k = "kill", trivial = false })
+    if what == "kill" then
+        -- kill / collect target: the yellow "!" the game uses for quests
+        style(f, { type = "avail", trivial = false })
+    else
+        style(f, { type = what, k = "kill", trivial = false })
+    end
     f.m = nil
-    fit(f, what == "avail" and 26 or 22)
+    fit(f, 30)
     f:Show()
 end
 
