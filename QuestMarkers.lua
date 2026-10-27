@@ -891,10 +891,11 @@ end
 -- icons over the heads of quest monsters (nameplates)
 ---------------------------------------------------------------------------
 local finishSet, objSet = {}, {}
+local textQuests = {}      -- quests matched by monster names in their text
 local plateIcons = {}     -- unit token -> icon frame
 
 rebuildSets = function()
-    wipe(finishSet); wipe(objSet)
+    wipe(finishSet); wipe(objSet); wipe(textQuests)
     local QD = dbs()
     if not QD then return end
     for qid in pairs(state.complete) do
@@ -905,6 +906,14 @@ rebuildSets = function()
         if not state.complete[qid] then
             local tg = targetsOf(qid)
             for _, t in ipairs(tg) do if t.kind == 1 then objSet[t.ent] = true end end
+            local hasKill = false
+            for _, t in ipairs(tg) do if t.kind == 1 then hasKill = true; break end end
+            if not hasKill then
+                -- the database knows no monster for this quest: match monsters by the names in the quest text
+                local tl = safe(QD.objectivesText, qid)
+                local txt = (type(tl) == "table" and table.concat(tl, " ") or tl or ""):lower()
+                if txt ~= "" then textQuests[#textQuests + 1] = { title = questName(qid), text = txt } end
+            end
             if #tg == 0 then
                 local fb = safe(QD.finishedBy, qid)
                 for _, npc in ipairs(fb and fb[1] or {}) do finishSet[npc] = true end
@@ -920,6 +929,24 @@ local function startsAvailable(npc)
         if eligible(l[i], SFP.db.questTrivial) then return true end
     end
     return false
+end
+
+local function nameQuests(name)
+    if not name or #name < 5 or #textQuests == 0 then return nil end
+    local l = name:lower()
+    local out
+    for _, e in ipairs(textQuests) do
+        local from = e.text:find(l, 1, true)
+        if from and (from == 1 or not e.text:sub(from - 1, from - 1):match("%a")) then
+            out = out or {}
+            out[#out + 1] = e.title
+        end
+    end
+    return out
+end
+function SFP:QuestsByMonsterName(name)
+    if not Q.enabled then return nil end
+    return nameQuests(name)
 end
 
 local function headIcon(npc)
@@ -938,6 +965,9 @@ local function updatePlate(unit)
         if t == "Creature" or t == "Vehicle" then npc = tonumber(id) end
     end
     local what = Q.enabled and npc and not UnitIsPlayer(unit) and headIcon(npc) or nil
+    if Q.enabled and not what and unit and not UnitIsPlayer(unit) and SFP.db.questHeads ~= false and nameQuests(UnitName(unit)) then
+        what = "kill"
+    end
     if Q.enabled and not what and npc and not UnitIsPlayer(unit) and SFP.db.questHeads ~= false
         and C_QuestLog and C_QuestLog.UnitIsRelatedToActiveQuest then
         -- the game itself knows this monster belongs to one of your quests (data gaps)

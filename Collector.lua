@@ -449,7 +449,10 @@ local function unitTip(tt, data)
     tt:AddLine(" ")
     do
         local ql = SFP.QuestObjectiveNpc and SFP:QuestObjectiveNpc(id)
-        if not ql and unit and C_QuestLog and C_QuestLog.UnitIsRelatedToActiveQuest and select(2, pcall(C_QuestLog.UnitIsRelatedToActiveQuest, unit)) then
+        local byName = not ql and unit and SFP.QuestsByMonsterName and SFP:QuestsByMonsterName(UnitName(unit))
+        if byName then
+            for i = 1, min(3, #byName) do tt:AddLine("|cffffd100! Quest:|r " .. byName[i], 1, 1, 1, true) end
+        elseif not ql and unit and C_QuestLog and C_QuestLog.UnitIsRelatedToActiveQuest and select(2, pcall(C_QuestLog.UnitIsRelatedToActiveQuest, unit)) then
             tt:AddLine("|cffffd100! Needed for one of your quests|r")
         end
     end

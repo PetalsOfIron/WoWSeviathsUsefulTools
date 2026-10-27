@@ -1,5 +1,8 @@
 # SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
 
+## 1.26.4-mop
+- Head marks and tooltip line for monsters named in the quest text, even when the monster is not in the database
+
 ## 1.26.3-mop
 - Fix error on the minimap quest areas
 
