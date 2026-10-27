@@ -27,6 +27,7 @@ end
 local Q = {}
 SFP.QuestMarkers = Q
 
+local questZones                     -- forward declaration
 local rebuildSets                    -- forward declaration
 local entName                       -- forward declaration (defined with the tooltip helpers)
 local version = 0                    -- bumped whenever the quest state changes
@@ -808,7 +809,7 @@ end
 -- translucent highlight of the zones that hold your quests (continent / world maps)
 ---------------------------------------------------------------------------
 local zoneSets = { v = -1 }
-local function questZones()
+questZones = function()
     if zoneSets.v == version then return zoneSets end
     zoneSets = { v = version, obj = {}, turn = {} }
     local Z = zoneDB()

@@ -1,5 +1,8 @@
 # SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
 
+## 1.24.5-mop
+- Fixed an error when the world map switched to a continent view (a helper was used before it was defined)
+
 ## 1.24.4-mop
 - Quests hidden under a collapsed zone header of the game's quest log are found now (the log expands the headers once)
 
