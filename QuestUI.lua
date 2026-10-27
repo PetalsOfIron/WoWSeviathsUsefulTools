@@ -357,7 +357,8 @@ function UI:RefreshLog()
         log.detail:SetText("|cff808080Pick a quest on the left.|r")
         for _, b in ipairs(log.buttons) do b:Hide() end
     end
-    log.count:SetText(#QM():LogList() .. "/25 quests")
+    local have, game = #QM():LogList(), QM():GameCount()
+    log.count:SetText(have .. "/25 quests" .. ((game and game ~= have) and ("  |cffff8040(the game counts " .. game .. ")|r") or ""))
 end
 
 function UI:ShowQuest(qid)
@@ -489,7 +490,10 @@ function UI:BuildLog()
         log.buttons[#log.buttons + 1] = b
         if s[1] == "Untrack" then log.btnTrack = b end
     end
-    log:SetScript("OnShow", function() UI:RefreshLog() end)
+    log:SetScript("OnShow", function()
+        if QM() then QM():RefreshNow() end
+        UI:RefreshLog()
+    end)
     log:Hide()
 end
 

@@ -27,6 +27,7 @@ end
 local Q = {}
 SFP.QuestMarkers = Q
 
+local rebuildSets                    -- forward declaration
 local entName                       -- forward declaration (defined with the tooltip helpers)
 local version = 0                    -- bumped whenever the quest state changes
 local state = { inLog = {}, complete = {}, done = {}, level = 1, raceMask = nil, classMask = nil }
@@ -63,7 +64,11 @@ local function refreshState()
     wipe(state.inLog); wipe(state.complete)
     state.list = {}
     local modern = C_QuestLog and C_QuestLog.GetNumQuestLogEntries and C_QuestLog.GetInfo
-    local n = modern and C_QuestLog.GetNumQuestLogEntries() or (GetNumQuestLogEntries and (GetNumQuestLogEntries())) or 0
+    local n, numQuests
+    if modern then n, numQuests = C_QuestLog.GetNumQuestLogEntries()
+    elseif GetNumQuestLogEntries then n, numQuests = GetNumQuestLogEntries() end
+    n = n or 0
+    state.gameCount = numQuests
     local zone = "Quests"
     for i = 1, n do
         local qid, header, isComplete, title, level
@@ -271,6 +276,14 @@ local function targetsOf(qid)
 end
 
 function Q:LogList() return state.list or {} end
+function Q:GameCount() return state.gameCount end
+
+-- bring everything up to date right now (used when a window opens)
+function Q:RefreshNow()
+    if not Q.enabled then return end
+    SFP:Safe("quest state", refreshState)
+    SFP:Safe("quest sets", function() rebuildSets() end)
+end
 
 function Q:SetPin(m, x, y, text, qid)
     SFP.db.questPin = { m = m, x = x, y = y, text = text, q = qid }
@@ -710,7 +723,7 @@ end
 local finishSet, objSet = {}, {}
 local plateIcons = {}     -- unit token -> icon frame
 
-local function rebuildSets()
+rebuildSets = function()
     wipe(finishSet); wipe(objSet)
     local QD = dbs()
     if not QD then return end

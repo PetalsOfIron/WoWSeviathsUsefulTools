@@ -1,5 +1,8 @@
 # SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
 
+## 1.24.2-mop
+- The quest log window refreshes when it opens and shows the game's own quest count next to ours, so a missing quest is visible
+
 ## 1.24.1-mop
 - "Report to ..." quests (nothing to kill or collect) get their marker, pin and zone tint at the NPC you have to talk to; "Pin on map" now finds them
 
