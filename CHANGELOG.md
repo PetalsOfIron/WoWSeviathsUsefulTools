@@ -1,5 +1,8 @@
 # SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
 
+## 1.24.1-mop
+- "Report to ..." quests (nothing to kill or collect) get their marker, pin and zone tint at the NPC you have to talk to; "Pin on map" now finds them
+
 ## 1.24.0-mop
 - Fully self-contained: the quest, monster, object and item data of Mists of Pandaria is now part of this
   addon (Data/QD_*.lua, about 7 MB, generated from the QuestieDB database, GPL-3.0). Neither Questie nor

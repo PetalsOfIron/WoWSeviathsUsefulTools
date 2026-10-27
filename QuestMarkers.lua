@@ -308,18 +308,18 @@ function Q:Locate(qid)
         end
         return best
     end
-    if state.complete[qid] then
-        local fb = QD and safe(QD.finishedBy, qid)
-        for kind = 1, 2 do
-            for _, ent in ipairs(fb and fb[kind] or {}) do
-                local p = spot(kind, ent)
-                if p then p.text = "Turn in: " .. entName(kind, ent); return p end
-            end
-        end
-    else
+    if not state.complete[qid] then
         for _, t in ipairs(targetsOf(qid)) do
             local p = spot(t.kind, t.ent)
             if p then p.text = t.text .. " - " .. entName(t.kind, t.ent); return p end
+        end
+    end
+    -- finished quests and "report to ..." quests: where it is handed in
+    local fb = QD and safe(QD.finishedBy, qid)
+    for kind = 1, 2 do
+        for _, ent in ipairs(fb and fb[kind] or {}) do
+            local p = spot(kind, ent)
+            if p then p.text = (state.complete[qid] and "Turn in: " or "Report to: ") .. entName(kind, ent); return p end
         end
     end
     if C_QuestLog and C_QuestLog.GetNextWaypoint then
@@ -402,7 +402,19 @@ function Q:Collect(mapID)
         if not state.complete[qid] then
             local n = 0
             local seen = {}
-            for _, t in ipairs(targetsOf(qid)) do
+            local tg = targetsOf(qid)
+            if #tg == 0 then
+                -- nothing to kill or collect: talk to the finisher ("Report to ...")
+                local fb = safe(QD.finishedBy, qid)
+                for kind = 1, 2 do
+                    for _, ent in ipairs(fb and fb[kind] or {}) do
+                        for _, c in ipairs(coordsOf(kind, ent, area, 2)) do
+                            res.turnin[#res.turnin + 1] = { q = qid, ent = ent, kind = kind, x = c[1], y = c[2] }
+                        end
+                    end
+                end
+            end
+            for _, t in ipairs(tg) do
                 for _, c in ipairs(coordsOf(t.kind, t.ent, area, 10)) do
                     local cell = floor(c[1] * 120) .. ":" .. floor(c[2] * 120) .. ":" .. qid .. t.k
                     if not seen[cell] and n < 60 then
@@ -708,7 +720,12 @@ local function rebuildSets()
     end
     for qid in pairs(state.inLog) do
         if not state.complete[qid] then
-            for _, t in ipairs(targetsOf(qid)) do if t.kind == 1 then objSet[t.ent] = true end end
+            local tg = targetsOf(qid)
+            for _, t in ipairs(tg) do if t.kind == 1 then objSet[t.ent] = true end end
+            if #tg == 0 then
+                local fb = safe(QD.finishedBy, qid)
+                for _, npc in ipairs(fb and fb[1] or {}) do finishSet[npc] = true end
+            end
         end
     end
 end
@@ -796,7 +813,12 @@ local function questZones()
             local fb = safe(QD.finishedBy, qid)
             for kind = 1, 2 do for _, ent in ipairs(fb and fb[kind] or {}) do mark(zoneSets.turn, qid, kind, ent) end end
         else
-            for _, t in ipairs(targetsOf(qid)) do mark(zoneSets.obj, qid, t.kind, t.ent) end
+            local tg = targetsOf(qid)
+            for _, t in ipairs(tg) do mark(zoneSets.obj, qid, t.kind, t.ent) end
+            if #tg == 0 then
+                local fb = safe(QD.finishedBy, qid)
+                for kind = 1, 2 do for _, ent in ipairs(fb and fb[kind] or {}) do mark(zoneSets.turn, qid, kind, ent) end end
+            end
         end
     end
     return zoneSets
