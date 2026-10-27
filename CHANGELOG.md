@@ -1,5 +1,12 @@
 # SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
 
+## 1.21.0-mop
+- Quest markers: the addon now draws quests itself (data: QuestieDB) with its own design - gold "!"
+  for quests you can pick up (level, race, class, prerequisites checked), cyan "?" to turn in, skull /
+  diamond / square for kill / collect / use targets of your open quests - on the zone map and on the
+  minimap. Hover for details, Ctrl-click for a waypoint. Monster tooltips list the quests they belong to.
+  Questie's own map icons are switched off once so nothing is drawn twice (/sfp quests, /sfp questie)
+
 ## 1.20.4-mop
 - Fixed ADDON_ACTION_FORBIDDEN when right-clicking bag items: the addon no longer writes to the game's C_Item table when it already exists
 

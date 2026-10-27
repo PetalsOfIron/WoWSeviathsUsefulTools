@@ -185,7 +185,7 @@ end
 SFP:OnLogin(function()
     C_Timer.After(12, function()
         local Q = _G.Questie
-        if not (Q and Q.db and Q.db.profile) or SFP.db.questieFixed then return end
+        if not (Q and Q.db and Q.db.profile) or SFP.db.questieFixed or SFP.db.questMarkers ~= false then return end
         SFP.db.questieFixed = true
         if not SFP:QuestieMinimapOn() then
             SFP:QuestieOwnIcons(true)

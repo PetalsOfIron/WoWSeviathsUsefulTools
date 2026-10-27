@@ -55,6 +55,8 @@ local function getZoneDB()
     return zoneDBCache or nil
 end
 
+SFP.GetZoneDB = getZoneDB
+
 -- { m = uiMapID, x, y } (0-1) of the first spawn, for "Show on map"
 local function uiSpot(spawns)
     local Z = getZoneDB()

@@ -493,6 +493,10 @@ local function unitTip(tt, data)
             tt:AddLine("Starts: " .. table.concat(names, ", "), 0.6, 1, 0.6, true)
         end
     end
+    local objq = SFP.QuestObjectiveNpc and SFP:QuestObjectiveNpc(id)
+    if objq then
+        for i = 1, min(4, #objq) do tt:AddLine("|cffffd24aQuest|r " .. objq[i], 1, 0.9, 0.5, true) end
+    end
     if not shown then
         tt:AddLine("No drops learned yet - kill it and loot to record them", 0.5, 0.5, 0.5, true)
     end

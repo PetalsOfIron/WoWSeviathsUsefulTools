@@ -702,6 +702,11 @@ SlashCmdList["SEVIATHSUSEFULTOOLS"] = function(msg)
             local pct, mats = SFP:ScanProgress()
             SFP:Print(("Item scan: %d%% of the item IDs asked, %d crafting materials known."):format(pct, mats))
         end
+    elseif cmd == "quests" then
+        if SFP.QuestMarkers then
+            SFP.QuestMarkers:SetEnabled(not (SFP.db.questMarkers ~= false))
+            SFP:Print("Quest markers " .. (SFP.db.questMarkers and "ON" or "OFF"))
+        end
     elseif cmd == "questie" then
         if SFP.QuestieOwnIcons then SFP:QuestieOwnIcons() end
     elseif cmd == "tipdebug" then
@@ -740,7 +745,8 @@ SlashCmdList["SEVIATHSUSEFULTOOLS"] = function(msg)
         SFP:Print("/sfp scan - rescan AH prices (auction house must be open)")
         SFP:Print("/sfp min <gold> - only light zones worth at least this much")
         SFP:Print("/sfp tooltip - toggle the item tooltip lines")
-        SFP:Print("/sfp questie - make Questie draw quests on the map and minimap")
+        SFP:Print("/sfp quests - toggle this addon's quest markers (map + minimap)")
+        SFP:Print("/sfp questie - hand the quest icons back to Questie")
         SFP:Print("/sfp menu - the main menu with everything")
         SFP:Print("/sfp know - everything the addon has learned (monsters, items, recipes)")
         SFP:Print("/sfp errors - show internal errors")
