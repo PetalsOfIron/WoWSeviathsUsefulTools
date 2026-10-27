@@ -8,8 +8,11 @@
 
 local ADDON, SFP = ...
 
-local function dbs() return _G.QuestDB, _G.NpcDB, _G.ItemDB, _G.ObjectDB end
-function SFP:HasQuestieDB() return _G.NpcDB ~= nil and _G.QuestDB ~= nil end
+local function dbs()
+    local d = SFP.QDB
+    if not d then return nil end
+    return d.Quest, d.Npc, d.Item, d.Object
+end
 
 local function safe(fn, ...)
     if not fn then return nil end
@@ -28,6 +31,7 @@ local function areaName(id)
     if c then return c end
     local n
     if C_Map and C_Map.GetAreaInfo then n = safe(C_Map.GetAreaInfo, id) end
+    if not n and SFP.QD and SFP.QD.areaNames then n = SFP.QD.areaNames[id] end
     if not n and _G.LibQuestieDB and LibQuestieDB.Enum and LibQuestieDB.Enum.zoneIDs then
         if not areaRev then
             areaRev = {}
@@ -50,26 +54,8 @@ end
 local zoneDBCache
 local function getZoneDB()
     if zoneDBCache ~= nil then return zoneDBCache or nil end
-    -- the data addon publishes its zone tables (area id <-> map id, dungeons)
-    local lib = _G.LibQuestieDB
-    local sup = lib and lib.Support and lib.Support.Get and safe(lib.Support.Get, "ZoneDB")
-    local p = sup and sup.private
-    if p and (p.areaIdToUiMapId or p.areaIdToUiMapIdOverride) then
-        local function load(str)
-            local f = type(str) == "string" and loadstring(str)
-            local ok, t = pcall(f or function() return {} end)
-            return ok and type(t) == "table" and t or {}
-        end
-        local a2u, u2a = load(p.areaIdToUiMapId), load(p.uiMapIdToAreaId)
-        for k, v in pairs(load(p.areaIdToUiMapIdOverride)) do a2u[k] = v end
-        for k, v in pairs(load(p.uiMapIdToAreaIdOverride)) do u2a[k] = v end
-        local Z = { dungeons = p.dungeons }
-        function Z:GetUiMapIdByAreaId(area) return a2u[area] end
-        function Z:GetAreaIdByUiMapId(map) return u2a[map] end
-        function Z:GetDungeons() return p.dungeons end
-        zoneDBCache = Z
-        return Z
-    end
+    zoneDBCache = SFP.QDB and SFP.QDB.Zone or false
+    if zoneDBCache then return zoneDBCache end
     -- older setups: Questie itself provides it
     local loader = _G.QuestieLoader
     zoneDBCache = (loader and loader.ImportModule and safe(function() return loader:ImportModule("ZoneDB") end)) or false

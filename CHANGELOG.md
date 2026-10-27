@@ -1,5 +1,10 @@
 # SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
 
+## 1.24.0-mop
+- Fully self-contained: the quest, monster, object and item data of Mists of Pandaria is now part of this
+  addon (Data/QD_*.lua, about 7 MB, generated from the QuestieDB database, GPL-3.0). Neither Questie nor
+  QuestieDB has to be installed or enabled
+
 ## 1.23.2-mop
 - Works without the Questie addon: only the QuestieDB data addon is needed (zone tables are read from it); a chat line says so when it is missing or disabled
 

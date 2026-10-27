@@ -13,7 +13,11 @@ local ADDON, SFP = ...
 local floor, min, max = math.floor, math.min, math.max
 local band = bit and bit.band
 
-local function dbs() return _G.QuestDB, _G.NpcDB, _G.ItemDB, _G.ObjectDB end
+local function dbs()
+    local d = SFP.QDB
+    if not d then return nil end
+    return d.Quest, d.Npc, d.Item, d.Object
+end
 local function safe(fn, ...)
     if not fn then return nil end
     local ok, a = pcall(fn, ...)
@@ -48,7 +52,7 @@ local function refreshState()
     version = version + 1
     wipe(cache); wipe(elig); wipe(targetsCache); wipe(objNpc)
     state.level = UnitLevel("player") or 1
-    local lib = _G.LibQuestieDB
+    local lib = SFP.QDB
     local _, classFile = UnitClass("player")
     local raceID = select(3, UnitRace("player"))
     if lib and lib.Enum then
@@ -890,7 +894,7 @@ SFP:OnLogin(function()
     if not SFP:HasQuestieDB() then
         C_Timer.After(8, function()
             if not SFP:HasQuestieDB() then
-                SFP:Print("Quest markers, the quest tracker and the quest guide need the QuestieDB data addon enabled (Esc > AddOns). It is only data - Questie itself can stay off.")
+                SFP:Print("The quest data did not load (Data/QD_*.lua missing?). Reinstall the addon.")
             end
         end)
         return

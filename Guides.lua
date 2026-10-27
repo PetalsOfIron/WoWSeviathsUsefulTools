@@ -148,7 +148,7 @@ end
 -- Mounts
 ---------------------------------------------------------------------------
 local function npcWhere(npcID, areaID)
-    local N = _G.NpcDB
+    local N = SFP.QDB and SFP.QDB.Npc
     local sp = N and safe(N.spawns, npcID)
     if type(sp) ~= "table" then return area(areaID) or "" end
     local list = areaID and sp[areaID]

@@ -287,7 +287,7 @@ local function buildFlat()
 end
 
 local function detailFor(e)
-    local QD = _G.QuestDB
+    local QD = SFP.QDB and SFP.QDB.Quest
     local t = {}
     local r, g, b = levelColor(e.l)
     t[#t + 1] = string.format("|cff%02x%02x%02x[%s] %s|r", r * 255, g * 255, b * 255, e.l or "?", e.t)

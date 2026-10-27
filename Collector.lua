@@ -481,7 +481,7 @@ local function unitTip(tt, data)
         end
     end
     -- quests it gives or takes (Questie database)
-    local Q, N = _G.QuestDB, _G.NpcDB
+    local Q, N = SFP.QDB and SFP.QDB.Quest, SFP.QDB and SFP.QDB.Npc
     if Q and N then
         local ok, starts = pcall(N.questStarts, id)
         if ok and starts and #starts > 0 then
