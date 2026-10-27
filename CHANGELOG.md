@@ -1,5 +1,9 @@
 # SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
 
+## 1.26.7-mop
+- Quests with an unknown objective spot: no more false "turn in" marker; the places where you met the quest monsters are remembered and marked on the map
+- /sfp plates: shows what the head marks see
+
 ## 1.26.6-mop
 - Head marks sit above the health bar of the nameplate, on a higher layer, ignoring plate alpha
 

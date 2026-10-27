@@ -708,6 +708,8 @@ SlashCmdList["SEVIATHSUSEFULTOOLS"] = function(msg)
         if SFP.QuestUI then SFP.QuestUI:Command(rest) end
     elseif cmd == "questdebug" then
         if SFP.QuestMarkers then SFP.QuestMarkers:Debug() end
+    elseif cmd == "plates" then
+        if SFP.QuestMarkers and SFP.QuestMarkers.PlateDebug then SFP.QuestMarkers:PlateDebug() end
     elseif cmd == "questscale" then
         local v = tonumber(rest)
         if v then

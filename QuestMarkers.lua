@@ -435,7 +435,9 @@ function Q:Collect(mapID)
             local n = 0
             local seen = {}
             local tg = targetsOf(qid)
-            if #tg == 0 then
+            local obq = safe(QD.objectives, qid)
+            local hasObj = obq and (#(obq[1] or {}) + #(obq[2] or {}) + #(obq[3] or {}) + #(obq[5] or {})) > 0
+            if #tg == 0 and not hasObj then
                 -- nothing to kill or collect: talk to the finisher ("Report to ...")
                 local fb = safe(QD.finishedBy, qid)
                 for kind = 1, 2 do
@@ -455,8 +457,15 @@ function Q:Collect(mapID)
                     end
                 end
             end
+            -- places where you met the monsters named in the quest text
+            for _, p in ipairs(SFP.db.questSeen and SFP.db.questSeen[qid] or {}) do
+                if p.m == mapID and n < 60 then
+                    n = n + 1
+                    res.obj[#res.obj + 1] = { q = qid, k = "kill", ent = 0, kind = 3, x = p.x, y = p.y, text = "Monsters of this quest were here" }
+                end
+            end
             -- no target of this quest has a known position anywhere: mark the area around its giver / hand-in
-            if #tg > 0 and n == 0 then
+            if (#tg > 0 or hasObj) and n == 0 then
                 local known = false
                 for _, t in ipairs(tg) do
                     local sp = t.sp or (t.kind == 1 and safe(N.spawns, t.ent)) or (t.kind == 2 and O and safe(O.spawns, t.ent))
@@ -843,7 +852,7 @@ rebuildSets = function()
                 -- the database knows no monster for this quest: match monsters by the names in the quest text
                 local tl = safe(QD.objectivesText, qid)
                 local txt = (type(tl) == "table" and table.concat(tl, " ") or tl or ""):lower()
-                if txt ~= "" then textQuests[#textQuests + 1] = { title = questName(qid), text = txt } end
+                if txt ~= "" then textQuests[#textQuests + 1] = { qid = qid, title = questName(qid), text = txt } end
             end
             if #tg == 0 then
                 local fb = safe(QD.finishedBy, qid)
@@ -865,15 +874,43 @@ end
 local function nameQuests(name)
     if not name or #name < 5 or #textQuests == 0 then return nil end
     local l = name:lower()
-    local out
+    local out, qids
     for _, e in ipairs(textQuests) do
         local from = e.text:find(l, 1, true)
         if from and (from == 1 or not e.text:sub(from - 1, from - 1):match("%a")) then
             out = out or {}
             out[#out + 1] = e.title
+            qids = qids or {}
+            qids[#qids + 1] = e.qid
         end
     end
-    return out
+    return out, qids
+end
+-- where you met monsters of a quest whose spawn points the database lacks: remembered account-wide
+local function rememberSeen(qids)
+    if not (qids and C_Map and C_Map.GetBestMapForUnit and C_Map.GetPlayerMapPosition) then return end
+    local m = C_Map.GetBestMapForUnit("player")
+    local pos = m and C_Map.GetPlayerMapPosition(m, "player")
+    if not pos then return end
+    local x, y = pos:GetXY()
+    if not x or x == 0 then return end
+    SFP.db.questSeen = SFP.db.questSeen or {}
+    local changed
+    for _, qid in ipairs(qids) do
+        local l = SFP.db.questSeen[qid]
+        if not l then l = {}; SFP.db.questSeen[qid] = l end
+        local dup
+        for _, p in ipairs(l) do
+            if p.m == m and (p.x - x) ^ 2 + (p.y - y) ^ 2 < 0.012 ^ 2 then dup = true; break end
+        end
+        if not dup and #l < 30 then l[#l + 1] = { m = m, x = x, y = y }; changed = true end
+    end
+    if changed then wipe(cache); if Q.Refresh then Q:Refresh() end end
+end
+function Q:SeenMonster(unit)
+    if not (Q.enabled and unit and UnitExists(unit) and not UnitIsPlayer(unit)) then return end
+    local _, qids = nameQuests(UnitName(unit))
+    rememberSeen(qids)
 end
 function SFP:QuestsByMonsterName(name)
     if not Q.enabled then return nil end
@@ -898,6 +935,7 @@ local function updatePlate(unit)
     local what = Q.enabled and npc and not UnitIsPlayer(unit) and headIcon(npc) or nil
     if Q.enabled and not what and unit and not UnitIsPlayer(unit) and SFP.db.questHeads ~= false and nameQuests(UnitName(unit)) then
         what = "kill"
+        if UnitIsDead and not UnitIsDead(unit) then Q:SeenMonster(unit) end
     end
     if Q.enabled and not what and npc and not UnitIsPlayer(unit) and SFP.db.questHeads ~= false
         and C_QuestLog and C_QuestLog.UnitIsRelatedToActiveQuest then
@@ -928,6 +966,18 @@ local function updatePlate(unit)
     f.m = nil
     fit(f, what == "avail" and 26 or 22)
     f:Show()
+end
+
+function Q:PlateDebug()
+    local plates = C_NamePlate and C_NamePlate.GetNamePlates and C_NamePlate.GetNamePlates() or {}
+    SFP:Print("nameplates: " .. #plates .. ", quests matched by text: " .. #textQuests)
+    for _, plate in ipairs(plates) do
+        local unit = plate.namePlateUnitToken or (plate.UnitFrame and plate.UnitFrame.unit)
+        local nm = unit and UnitName(unit)
+        local f = unit and plateIcons[unit]
+        SFP:Print(tostring(unit) .. " " .. tostring(nm) .. " match=" .. tostring(nameQuests(nm) ~= nil) ..
+            " icon=" .. tostring(f and f:IsShown()) .. (f and (" w=" .. floor(f:GetWidth()) .. " vis=" .. tostring(f:IsVisible())) or ""))
+    end
 end
 
 function Q:UpdatePlates()
@@ -1096,7 +1146,11 @@ SFP:OnLogin(function()
     local pev = CreateFrame("Frame")
     pcall(pev.RegisterEvent, pev, "NAME_PLATE_UNIT_ADDED")
     pcall(pev.RegisterEvent, pev, "NAME_PLATE_UNIT_REMOVED")
+    pcall(pev.RegisterEvent, pev, "UPDATE_MOUSEOVER_UNIT")
+    pcall(pev.RegisterEvent, pev, "PLAYER_TARGET_CHANGED")
     pev:SetScript("OnEvent", function(_, event, unit)
+        if event == "UPDATE_MOUSEOVER_UNIT" then return SFP:Safe("seen mouseover", function() Q:SeenMonster("mouseover") end) end
+        if event == "PLAYER_TARGET_CHANGED" then return SFP:Safe("seen target", function() Q:SeenMonster("target") end) end
         if not Q.enabled or not unit then return end
         if event == "NAME_PLATE_UNIT_ADDED" then updatePlate(unit)
         elseif plateIcons[unit] then plateIcons[unit]:Hide() end
