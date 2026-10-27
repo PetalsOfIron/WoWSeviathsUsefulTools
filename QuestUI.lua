@@ -43,6 +43,7 @@ end
 -- pin a quest on the map
 ---------------------------------------------------------------------------
 function UI:PinQuest(qid, openMap)
+    if openMap == nil then openMap = true end
     local q = QM()
     local loc = q and q:Locate(qid)
     if not loc then
@@ -58,7 +59,10 @@ function UI:PinQuest(qid, openMap)
     end
     if _G.TomTom and TomTom.AddWaypoint then pcall(TomTom.AddWaypoint, TomTom, loc.m, loc.x, loc.y, { title = loc.text }) end
     SFP:Print(("Pinned: %s - %s %.1f, %.1f"):format(loc.text or "quest", SFP:ZoneName(loc.m), loc.x * 100, loc.y * 100))
-    if openMap and SFP.OpenMapTo then SFP:OpenMapTo(loc.m) end
+    if openMap and SFP.OpenMapTo then
+        SFP:OpenMapTo(loc.m)
+        C_Timer.After(0.15, function() q:DrawWorldMap() end)
+    end
 end
 
 ---------------------------------------------------------------------------
@@ -81,10 +85,10 @@ local function trackerLine(i)
     l.pin.tex:SetAllPoints()
     l.pin.tex:SetTexture("Interface\\Icons\\INV_Misc_Map_01")
     l.pin.tex:SetTexCoord(0.08, 0.92, 0.08, 0.92)
-    l.pin:SetScript("OnClick", function(self) UI:PinQuest(self.qid) end)
+    l.pin:SetScript("OnClick", function(self) UI:PinQuest(self.qid, true) end)
     l.pin:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_LEFT")
-        GameTooltip:AddLine("Pin this quest on the map")
+        GameTooltip:AddLine("Pin this quest and open the map at its place")
         GameTooltip:Show()
     end)
     l.pin:SetScript("OnLeave", function() GameTooltip:Hide() end)

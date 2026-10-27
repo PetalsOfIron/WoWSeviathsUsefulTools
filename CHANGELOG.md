@@ -1,5 +1,8 @@
 # SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
 
+## 1.24.3-mop
+- Clicking a quest's pin button (tracker or quest log) pins it and opens the map at the exact place
+
 ## 1.24.2-mop
 - The quest log window refreshes when it opens and shows the game's own quest count next to ours, so a missing quest is visible
 
