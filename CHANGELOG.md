@@ -1,5 +1,11 @@
 # SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
 
+## 1.26.0-mop
+- Quests without a known kill / collect position (item objectives with no source, exploration and special
+  objectives) now show an area: the exploration areas and special objective areas of the database were
+  added, and when nothing is known the area around the quest giver / hand-in NPC is marked
+- Tracker: every quest line is clickable (click: quest log, Ctrl-click: pin + map, Shift-click: hide)
+
 ## 1.25.2-mop
 - Kill / collect targets of your quests are drawn as translucent quest areas like the retail map (no skull icons); on the minimap they form areas too
 

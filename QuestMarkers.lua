@@ -272,6 +272,9 @@ local function targetsOf(qid)
             end
         end
     end
+    for _, st in ipairs(QD and safe(QD.spots, qid) or {}) do
+        out[#out + 1] = { k = "obj", kind = 3, ent = 0, sp = st.sp, text = (st.text ~= "" and st.text or "Go to the marked area") }
+    end
     targetsCache[qid] = out
     local title = questName(qid)
     for _, t in ipairs(out) do
@@ -312,8 +315,8 @@ function Q:Version() return version end
 function Q:Locate(qid)
     local QD, N, _, O = dbs()
     local Z = zoneDB()
-    local function spot(kind, ent)
-        local sp = kind == 1 and safe(N.spawns, ent) or (O and safe(O.spawns, ent))
+    local function spot(kind, ent, own)
+        local sp = own or (kind == 1 and safe(N.spawns, ent)) or (O and kind == 2 and safe(O.spawns, ent))
         if type(sp) ~= "table" or not (Z and Z.GetUiMapIdByAreaId) then return nil end
         local px, py
         local here = C_Map.GetBestMapForUnit("player")
@@ -332,8 +335,8 @@ function Q:Locate(qid)
     end
     if not state.complete[qid] then
         for _, t in ipairs(targetsOf(qid)) do
-            local p = spot(t.kind, t.ent)
-            if p then p.text = t.text .. " - " .. entName(t.kind, t.ent); return p end
+            local p = spot(t.kind, t.ent, t.sp)
+            if p then p.text = t.text .. (entName(t.kind, t.ent) ~= "" and (" - " .. entName(t.kind, t.ent)) or ""); return p end
         end
     end
     -- finished quests and "report to ..." quests: where it is handed in
@@ -348,6 +351,13 @@ function Q:Locate(qid)
         local wm, wx, wy = safe(C_QuestLog.GetNextWaypoint, qid)
         if wm and wx then return { m = wm, x = wx, y = wy, text = "Quest position (from the game)" } end
     end
+    local sb = QD and safe(QD.startedBy, qid)
+    for kind = 1, 2 do
+        for _, ent in ipairs(sb and sb[kind] or {}) do
+            local p = spot(kind, ent)
+            if p then p.text = "Exact spot not known - quest giver: " .. entName(kind, ent); return p end
+        end
+    end
     return nil
 end
 
@@ -361,9 +371,9 @@ end
 ---------------------------------------------------------------------------
 -- collecting what to draw on one map
 ---------------------------------------------------------------------------
-local function coordsOf(kind, ent, area, limit)
+local function coordsOf(kind, ent, area, limit, own)
     local _, N, _, O = dbs()
-    local sp = kind == 1 and safe(N.spawns, ent) or (O and safe(O.spawns, ent))
+    local sp = own or (kind == 1 and safe(N.spawns, ent)) or (O and kind == 2 and safe(O.spawns, ent))
     local list = type(sp) == "table" and sp[area]
     local out = {}
     if list then
@@ -376,7 +386,7 @@ local function coordsOf(kind, ent, area, limit)
 end
 
 entName = function(kind, ent)
-    if not kind or kind == 0 then return "" end
+    if not kind or kind == 0 or kind == 3 then return "" end
     local _, N, _, O = dbs()
     return (kind == 1 and safe(N.name, ent)) or (O and safe(O.name, ent)) or "?"
 end
@@ -437,11 +447,35 @@ function Q:Collect(mapID)
                 end
             end
             for _, t in ipairs(tg) do
-                for _, c in ipairs(coordsOf(t.kind, t.ent, area, 10)) do
+                for _, c in ipairs(coordsOf(t.kind, t.ent, area, 10, t.sp)) do
                     local cell = floor(c[1] * 120) .. ":" .. floor(c[2] * 120) .. ":" .. qid .. t.k
                     if not seen[cell] and n < 60 then
                         seen[cell] = true; n = n + 1
                         res.obj[#res.obj + 1] = { q = qid, k = t.k, ent = t.ent, kind = t.kind, x = c[1], y = c[2], text = t.text }
+                    end
+                end
+            end
+            -- no target of this quest has a known position anywhere: mark the area around its giver / hand-in
+            if #tg > 0 and n == 0 then
+                local known = false
+                for _, t in ipairs(tg) do
+                    local sp = t.sp or (t.kind == 1 and safe(N.spawns, t.ent)) or (t.kind == 2 and O and safe(O.spawns, t.ent))
+                    if type(sp) == "table" and next(sp) then known = true; break end
+                end
+                if not known then
+                    local fb2, sb2 = safe(QD.finishedBy, qid), safe(QD.startedBy, qid)
+                    for _, set in ipairs({ fb2, sb2 }) do
+                        for kind = 1, 2 do
+                            for _, ent in ipairs(set and set[kind] or {}) do
+                                for _, c in ipairs(coordsOf(kind, ent, area, 1)) do
+                                    if n == 0 then
+                                        n = 1
+                                        res.obj[#res.obj + 1] = { q = qid, k = "obj", ent = ent, kind = kind, x = c[1], y = c[2], big = true,
+                                            text = "Exact spot not known - around " .. entName(kind, ent) }
+                                    end
+                                end
+                            end
+                        end
                     end
                 end
             end
@@ -681,7 +715,7 @@ function Q:DrawWorldMap()
             hit.n = hit.n + 1; hit.sx = hit.sx + m.x; hit.sy = hit.sy + m.y
             if #hit.texts < 4 and m.text then hit.texts[#hit.texts + 1] = m.text end
         else
-            blobs[#blobs + 1] = { q = m.q, n = 1, sx = m.x, sy = m.y, k = m.k, ent = m.ent, kind = m.kind, texts = { m.text } }
+            blobs[#blobs + 1] = { q = m.q, n = 1, sx = m.x, sy = m.y, k = m.k, ent = m.ent, kind = m.kind, texts = { m.text }, big = m.big }
         end
     end
     for _, b in ipairs(blobs) do
@@ -692,7 +726,7 @@ function Q:DrawWorldMap()
         local m = { type = "obj", blob = true, q = b.q, k = b.k, ent = b.ent, kind = b.kind, x = b.sx / b.n, y = b.sy / b.n,
             text = table.concat(b.texts, ", "), alpha = 0.26 }
         style(f, m)
-        local r = min(0.09, 0.028 + 0.012 * math.sqrt(b.n))
+        local r = b.big and 0.085 or min(0.09, 0.028 + 0.012 * math.sqrt(b.n))
         f:SetSize(r * 2 * w, r * 2 * w)
         f:ClearAllPoints()
         f:SetPoint("CENTER", layer, "TOPLEFT", m.x * w, -m.y * h)
@@ -835,6 +869,12 @@ local function updatePlate(unit)
         if t == "Creature" or t == "Vehicle" then npc = tonumber(id) end
     end
     local what = Q.enabled and npc and not UnitIsPlayer(unit) and headIcon(npc) or nil
+    if Q.enabled and not what and npc and not UnitIsPlayer(unit) and SFP.db.questHeads ~= false
+        and C_QuestLog and C_QuestLog.UnitIsRelatedToActiveQuest then
+        -- the game itself knows this monster belongs to one of your quests (data gaps)
+        local ok, rel = pcall(C_QuestLog.UnitIsRelatedToActiveQuest, unit)
+        if ok and rel then what = "kill" end
+    end
     if not what then
         if f then f:Hide() end
         return
@@ -873,8 +913,8 @@ questZones = function()
     local Z = zoneDB()
     local QD, N, _, O = dbs()
     if not (Z and Z.GetUiMapIdByAreaId and QD) then return zoneSets end
-    local function mark(set, qid, kind, ent)
-        local sp = kind == 1 and safe(N.spawns, ent) or (O and safe(O.spawns, ent))
+    local function mark(set, qid, kind, ent, own)
+        local sp = own or (kind == 1 and safe(N.spawns, ent)) or (O and kind == 2 and safe(O.spawns, ent))
         if type(sp) == "table" then
             for area in pairs(sp) do
                 local m = safe(function() return Z:GetUiMapIdByAreaId(area) end)
@@ -894,7 +934,7 @@ questZones = function()
             for kind = 1, 2 do for _, ent in ipairs(fb and fb[kind] or {}) do mark(zoneSets.turn, qid, kind, ent) end end
         else
             local tg = targetsOf(qid)
-            for _, t in ipairs(tg) do mark(zoneSets.obj, qid, t.kind, t.ent) end
+            for _, t in ipairs(tg) do mark(zoneSets.obj, qid, t.kind, t.ent, t.sp) end
             if #tg == 0 then
                 local fb = safe(QD.finishedBy, qid)
                 for kind = 1, 2 do for _, ent in ipairs(fb and fb[kind] or {}) do mark(zoneSets.turn, qid, kind, ent) end end

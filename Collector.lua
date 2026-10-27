@@ -447,6 +447,12 @@ local function unitTip(tt, data)
     local rec = SFP.db.npcs[id]
     local seed = SFP.farmNpc and SFP.farmNpc[id]
     tt:AddLine(" ")
+    do
+        local ql = SFP.QuestObjectiveNpc and SFP:QuestObjectiveNpc(id)
+        if not ql and unit and C_QuestLog and C_QuestLog.UnitIsRelatedToActiveQuest and select(2, pcall(C_QuestLog.UnitIsRelatedToActiveQuest, unit)) then
+            tt:AddLine("|cffffd100! Needed for one of your quests|r")
+        end
+    end
     tt:AddLine("|c" .. SFP.CYAN_HEX .. "Seviaths|r  |cff808080NPC " .. id .. "|r" ..
         (rec and rec.k and rec.k > 0 and ("  |cff808080" .. rec.k .. " kills seen|r") or ""))
     local list = {}

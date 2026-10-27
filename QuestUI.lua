@@ -93,9 +93,21 @@ local function trackerLine(i)
     end)
     l.pin:SetScript("OnLeave", function() GameTooltip:Hide() end)
     l:RegisterForClicks("LeftButtonUp")
+    l:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
+    l:SetScript("OnEnter", function(self)
+        if not self.qid then return end
+        GameTooltip:SetOwner(self, "ANCHOR_LEFT")
+        GameTooltip:AddLine("Click: open in the quest log", 1, 1, 1)
+        GameTooltip:AddLine("Ctrl-click: pin on the map and open it", 0.8, 0.8, 0.8)
+        GameTooltip:AddLine("Shift-click: hide from the tracker", 0.8, 0.8, 0.8)
+        GameTooltip:Show()
+    end)
+    l:SetScript("OnLeave", function() GameTooltip:Hide() end)
     l:SetScript("OnClick", function(self)
         if not self.qid then return end
-        if IsShiftKeyDown() then
+        if IsControlKeyDown() then
+            UI:PinQuest(self.qid, true)
+        elseif IsShiftKeyDown() then
             SFP.db.questHidden = SFP.db.questHidden or {}
             SFP.db.questHidden[self.qid] = true
             UI:UpdateTracker()

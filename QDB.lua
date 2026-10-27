@@ -153,6 +153,22 @@ local function parseSpawns(s)
     end
     return next(out) and out or nil
 end
+-- areas of exploration ("trigger") and special objectives of a quest: { {text, spawns}, ... }
+function Quest.spots(id)
+    local r = rec("q", id)
+    if not r then return nil end
+    local out = {}
+    local function add(s)
+        if not s or s == "" then return end
+        local text, sp = s:match("^([^~]*)~(.*)$")
+        local parsed = sp and parseSpawns(sp)
+        if parsed then out[#out + 1] = { text = text, sp = parsed } end
+    end
+    add(r[21])
+    if r[22] and r[22] ~= "" then for _, e in ipairs(split(r[22], "\028")) do add(e) end end
+    return #out > 0 and out or nil
+end
+
 local spawnCache = { n = {}, o = {} }
 local function spawnsOf(kind, id, idx)
     local c = spawnCache[kind]
