@@ -1,5 +1,8 @@
 # SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
 
+## 1.26.6-mop
+- Head marks sit above the health bar of the nameplate, on a higher layer, ignoring plate alpha
+
 ## 1.26.5-mop
 - Fix: random monsters from the name search hid the quest-text matching, so quest monsters got no head mark or tooltip line
 

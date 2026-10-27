@@ -916,9 +916,14 @@ local function updatePlate(unit)
         f:EnableMouse(false)
         plateIcons[unit] = f
     end
+    -- some nameplate addons hide or move the stock plate: use the visible health bar / unit frame when there is one
+    local anchor = plate.UnitFrame and plate.UnitFrame.healthBar or plate.UnitFrame or plate
     f:SetParent(plate)
+    f:SetFrameStrata("HIGH")
+    f:SetIgnoreParentAlpha(true)
+    f:SetIgnoreParentScale(true)
     f:ClearAllPoints()
-    f:SetPoint("BOTTOM", plate, "TOP", 0, 4)
+    f:SetPoint("BOTTOM", anchor, "TOP", 0, 18)
     style(f,  { type = (what == "kill") and "obj" or what, k = "kill", trivial = false })
     f.m = nil
     fit(f, what == "avail" and 26 or 22)
