@@ -1099,6 +1099,11 @@ function Q:Refresh()
     C_Timer.After(0.5, function()
         pending = false
         if not Q.enabled then return end
+        -- never touch the quest log while you talk to a quest giver (accepting / handing in a quest)
+        if (_G.QuestFrame and QuestFrame:IsShown()) or (_G.GossipFrame and GossipFrame:IsShown())
+            or (_G.QuestGreetingFrame and QuestGreetingFrame:IsShown()) then
+            return Q:Refresh()
+        end
         SFP:Safe("quest state", refreshState)
         SFP:Safe("quest sets", rebuildSets)
         SFP:Safe("quest heads", function() Q:UpdatePlates() end)

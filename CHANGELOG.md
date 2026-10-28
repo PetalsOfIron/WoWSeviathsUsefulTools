@@ -1,5 +1,8 @@
 # SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
 
+## 1.27.5-mop
+- Quest data refresh waits while a quest giver window is open (so it can never get in the way of accepting a quest)
+
 ## 1.27.4-mop
 - NPC tooltip "Starts:" lists only quests you can take now (not taken, not done, level and requirements fit)
 
