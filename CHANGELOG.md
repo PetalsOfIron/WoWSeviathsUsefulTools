@@ -1,5 +1,8 @@
 # SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
 
+## 1.27.6-mop
+- Quests you already finished no longer show as available on the minimap / map: the game is asked directly, and a quest is hidden when a later quest of its chain is taken or done
+
 ## 1.27.5-mop
 - Quest data refresh waits while a quest giver window is open (so it can never get in the way of accepting a quest)
 

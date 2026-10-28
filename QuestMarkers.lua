@@ -118,8 +118,10 @@ end
 
 local function isDone(qid)
     if state.done[qid] then return true end
-    if C_QuestLog and C_QuestLog.IsQuestFlaggedCompleted and not (C_QuestLog.GetAllCompletedQuestIDs) then
-        return C_QuestLog.IsQuestFlaggedCompleted(qid) and true or false
+    -- ask the game directly as well: the list of finished quests can be incomplete right after login
+    if C_QuestLog and C_QuestLog.IsQuestFlaggedCompleted then
+        local ok, v = pcall(C_QuestLog.IsQuestFlaggedCompleted, qid)
+        if ok and v then state.done[qid] = true; return true end
     end
     return false
 end
@@ -131,6 +133,11 @@ local function eligible(qid, trivialOk)
     local QD = dbs()
     local ok = true
     if state.inLog[qid] or isDone(qid) then ok = false end
+    if ok then
+        -- a later quest of the same chain is taken or finished: this one is behind you
+        local nxt = safe(QD.nextQuestInChain, qid)
+        if nxt and nxt > 0 and (state.inLog[nxt] or isDone(nxt)) then ok = false end
+    end
     if ok then
         local rl = safe(QD.requiredLevel, qid) or 0
         local ql = safe(QD.questLevel, qid) or rl
