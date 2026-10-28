@@ -1,5 +1,8 @@
 # SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
 
+## 1.27.1-mop
+- Scrape finished: positions for 460 monsters, 47 objects and the sources of 279 quest items; Demoniac Vessel parts now come from the Tainted bears, nightstalkers and screechers
+
 ## 1.27.0-mop
 - Positions the quest database lacks (monsters, objects, drop sources of quest items) are fetched from Wowhead into Data/QD_Extra.lua (tools/scrape_questdata.py + export_questdata.py); first batch included
 
