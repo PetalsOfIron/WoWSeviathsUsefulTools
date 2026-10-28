@@ -395,6 +395,37 @@ function Q:AnnounceUnlocked(lvl)
     end
 end
 
+-- compare the quest data with what this game client knows: finished quests and quests in the log
+function Q:Compare()
+    local QD = dbs()
+    if not QD then SFP:Print("No quest data loaded."); return end
+    local known = {}
+    for _, id in ipairs(safe(QD.GetAllIds) or {}) do known[id] = true end
+    local missing, checked, nameDiff, lvlDiff = {}, 0, {}, 0
+    local function check(qid, title, level)
+        checked = checked + 1
+        if not known[qid] then missing[#missing + 1] = qid; return end
+        local nm = safe(QD.name, qid)
+        if title and nm and nm ~= title and #nameDiff < 8 then nameDiff[#nameDiff + 1] = qid .. ": " .. nm .. " / " .. title end
+        local ql = safe(QD.questLevel, qid)
+        if level and level > 0 and ql and ql > 0 and ql ~= level then lvlDiff = lvlDiff + 1 end
+    end
+    for qid in pairs(state.done) do
+        local t = C_QuestLog and C_QuestLog.GetTitleForQuestID and C_QuestLog.GetTitleForQuestID(qid)
+        check(qid, t, nil)
+    end
+    for _, e in ipairs(state.list or {}) do check(e.q, e.t, e.l) end
+    SFP.db.questMissing = SFP.db.questMissing or {}
+    for _, qid in ipairs(missing) do SFP.db.questMissing[qid] = true end
+    SFP:Print(("Quest data vs this game: %d quests checked (finished + in log), %d missing from the data, %d with a different level."):format(checked, #missing, lvlDiff))
+    for i = 1, math.min(8, #missing) do
+        local t = C_QuestLog and C_QuestLog.GetTitleForQuestID and C_QuestLog.GetTitleForQuestID(missing[i])
+        SFP:Print(("  missing: %d %s"):format(missing[i], t or ""))
+    end
+    for _, d in ipairs(nameDiff) do SFP:Print("  name differs: " .. d) end
+    SFP:Print(("The data has %d quests in total."):format(#(safe(QD.GetAllIds) or {})))
+end
+
 function Q:LogList() return state.list or {} end
 function Q:GameCount() return state.gameCount end
 

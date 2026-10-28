@@ -1,5 +1,8 @@
 # SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
 
+## 1.30.0-mop
+- /sfp questcompare: checks your finished quests and quest log against the quest data (missing quests, different levels or names)
+
 ## 1.29.1-mop
 - Level up: quests unlock right away (the new level comes from the level-up event) and the chat lists the quests of the zone that the new level opened
 
