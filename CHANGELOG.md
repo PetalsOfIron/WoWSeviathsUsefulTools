@@ -1,5 +1,8 @@
 # SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
 
+## 1.30.1-mop
+- Positions for the quest givers and hand-in NPCs the database had no position for
+
 ## 1.30.0-mop
 - /sfp questcompare: checks your finished quests and quest log against the quest data (missing quests, different levels or names)
 
