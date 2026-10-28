@@ -61,6 +61,13 @@ local function refreshState()
         state.raceMask = lib.Enum.raceMaskById and lib.Enum.raceMaskById[raceID]
         state.classMask = lib.Enum.classKeys and lib.Enum.classKeys[classFile]
     end
+    state.petBattles = false
+    if C_PetJournal and C_PetJournal.IsJournalUnlocked then
+        local ok, v = pcall(C_PetJournal.IsJournalUnlocked)
+        state.petBattles = ok and v and true or false
+    elseif IsSpellKnown then
+        state.petBattles = IsSpellKnown(119467) and true or false   -- Battle Pet Training
+    end
     -- professions and secondary skills of the player (skill line -> rank)
     state.skills = {}
     if GetProfessions and GetProfessionInfo then
@@ -151,6 +158,11 @@ local function eligible(qid, trivialOk)
         if races and races > 0 and state.raceMask and band(state.raceMask, races) == 0 then ok = false end
         local classes = safe(QD.requiredClasses, qid)
         if classes and classes > 0 and state.classMask and band(state.classMask, classes) == 0 then ok = false end
+    end
+    if ok and not state.petBattles then
+        -- pet battle quests only make sense once pet battles are unlocked for this character
+        local txt = ((safe(QD.name, qid) or "") .. " " .. table.concat(safe(QD.objectivesText, qid) or {}, " ")):lower()
+        if txt:find("pet battle", 1, true) or txt:find("battle pet", 1, true) or txt:find("pet tamer", 1, true) then ok = false end
     end
     if ok then
         -- profession / skill quests need that skill (and enough of it)

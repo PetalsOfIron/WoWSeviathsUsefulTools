@@ -1,5 +1,8 @@
 # SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
 
+## 1.27.7-mop
+- Pet battle quests are hidden until pet battles are unlocked for the character
+
 ## 1.27.6-mop
 - Quests you already finished no longer show as available on the minimap / map: the game is asked directly, and a quest is hidden when a later quest of its chain is taken or done
 
