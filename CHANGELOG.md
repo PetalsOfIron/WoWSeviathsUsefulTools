@@ -1,5 +1,9 @@
 # SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
 
+## 1.27.2-mop
+- Tracker: the quest item you have to use gets its button next to the quest (click to use, tooltip, stack count)
+- Profession / skill quests are only shown when you have the skill
+
 ## 1.27.1-mop
 - Scrape finished: positions for 460 monsters, 47 objects and the sources of 279 quest items; Demoniac Vessel parts now come from the Tainted bears, nightstalkers and screechers
 

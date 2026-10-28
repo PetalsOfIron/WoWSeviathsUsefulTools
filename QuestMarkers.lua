@@ -31,7 +31,7 @@ local questZones                     -- forward declaration
 local rebuildSets                    -- forward declaration
 local entName                       -- forward declaration (defined with the tooltip helpers)
 local version = 0                    -- bumped whenever the quest state changes
-local state = { inLog = {}, complete = {}, done = {}, level = 1, raceMask = nil, classMask = nil }
+local state = { inLog = {}, complete = {}, done = {}, skills = {}, level = 1, raceMask = nil, classMask = nil }
 local startIdx, finishIdx = {}, {}   -- [areaID] = flat { questID, entityID, kind, ... } (kind 1 npc, 2 object)
 local starters = {}                  -- npcID -> { questIDs } of quests this npc starts
 local indexed, indexing = false, false
@@ -60,6 +60,17 @@ local function refreshState()
     if lib and lib.Enum then
         state.raceMask = lib.Enum.raceMaskById and lib.Enum.raceMaskById[raceID]
         state.classMask = lib.Enum.classKeys and lib.Enum.classKeys[classFile]
+    end
+    -- professions and secondary skills of the player (skill line -> rank)
+    state.skills = {}
+    if GetProfessions and GetProfessionInfo then
+        for i = 1, 6 do
+            local idx = select(i, GetProfessions())
+            if idx then
+                local _, _, rank, _, _, _, skillLine = GetProfessionInfo(idx)
+                if skillLine then state.skills[skillLine] = rank or 0 end
+            end
+        end
     end
     -- quest log (quests under a collapsed zone header are hidden by the game: expand them all once)
     local function scan()
@@ -133,6 +144,14 @@ local function eligible(qid, trivialOk)
         if races and races > 0 and state.raceMask and band(state.raceMask, races) == 0 then ok = false end
         local classes = safe(QD.requiredClasses, qid)
         if classes and classes > 0 and state.classMask and band(state.classMask, classes) == 0 then ok = false end
+    end
+    if ok then
+        -- profession / skill quests need that skill (and enough of it)
+        local sk = safe(QD.requiredSkill, qid)
+        if sk and sk[1] and sk[1] > 0 then
+            local have = state.skills[sk[1]]
+            if not have or have < (sk[2] or 0) then ok = false end
+        end
     end
     if ok then
         local group = safe(QD.preQuestGroup, qid)

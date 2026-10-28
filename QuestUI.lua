@@ -92,6 +92,26 @@ local function trackerLine(i)
         GameTooltip:Show()
     end)
     l.pin:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    -- quest item you have to use (the game's own item button of the quest)
+    l.item = CreateFrame("Button", nil, l, "SecureActionButtonTemplate")
+    l.item:SetSize(18, 18)
+    l.item:SetPoint("RIGHT", -16, 0)
+    l.item:RegisterForClicks("AnyUp", "AnyDown")
+    l.item.tex = l.item:CreateTexture(nil, "ARTWORK")
+    l.item.tex:SetAllPoints()
+    l.item.tex:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+    l.item.count = l.item:CreateFontString(nil, "OVERLAY", "NumberFontNormalSmall")
+    l.item.count:SetPoint("BOTTOMRIGHT", 0, 1)
+    l.item.cd = CreateFrame("Cooldown", nil, l.item, "CooldownFrameTemplate")
+    l.item.cd:SetAllPoints()
+    l.item:SetScript("OnEnter", function(self)
+        if not self.link then return end
+        GameTooltip:SetOwner(self, "ANCHOR_LEFT")
+        GameTooltip:SetHyperlink(self.link)
+        GameTooltip:Show()
+    end)
+    l.item:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    l.item:Hide()
     l:RegisterForClicks("LeftButtonUp")
     l:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
     l:SetScript("OnEnter", function(self)
@@ -129,18 +149,38 @@ function UI:UpdateTracker()
     local n, y = 0, 0
     local width = tracker:GetWidth() - 16
     local shown = 0
-    local function add(text, r, g, b, indent, qid, pin)
+    local function specialItem(idx)
+        if not idx then return end
+        local f = GetQuestLogSpecialItemInfo or (C_QuestLog and C_QuestLog.GetQuestLogSpecialItemInfo)
+        if not f then return end
+        local ok, link, icon, charges = pcall(f, idx)
+        if ok and link and icon then return link, icon, charges end
+    end
+    local function add(text, r, g, b, indent, qid, pin, logIndex)
         n = n + 1
         local l = trackerLine(n)
         l:ClearAllPoints()
         l:SetPoint("TOPLEFT", tracker.body, "TOPLEFT", indent or 0, -y)
         l:SetWidth(width - (indent or 0))
-        l.text:SetWidth(width - (indent or 0) - (pin and 16 or 0))
+        local link, icon, charges = specialItem(logIndex)
+        l.text:SetWidth(width - (indent or 0) - (pin and 16 or 0) - (link and 20 or 0))
         l.text:SetText(text)
         l.text:SetTextColor(r or 1, g or 1, b or 1)
         l.qid = qid
         l.pin.qid = qid
         l.pin:SetShown(pin and true or false)
+        if link and not InCombatLockdown() then
+            local itemName = GetItemInfo(link) or link
+            l.item.link = link
+            l.item:SetAttribute("type", "item")
+            l.item:SetAttribute("item", itemName)
+            l.item.tex:SetTexture(icon)
+            l.item.count:SetText((charges and charges > 1) and charges or "")
+            l.item:Show()
+        elseif not link and not InCombatLockdown() then
+            l.item.link = nil
+            l.item:Hide()
+        end
         l:Show()
         local h = max(14, l.text:GetStringHeight() + 2)
         l:SetHeight(h)
@@ -157,7 +197,7 @@ function UI:UpdateTracker()
                     y = y + 1
                 end
                 local r, g, b = levelColor(e.l)
-                add("[" .. (e.l or "?") .. "] " .. e.t, r, g, b, 6, e.q, true)
+                add("[" .. (e.l or "?") .. "] " .. e.t, r, g, b, 6, e.q, true, e.i)
                 if e.c then
                     add("Ready to turn in", 0.3, 1, 0.3, 14, e.q)
                 else
