@@ -495,11 +495,14 @@ local function unitTip(tt, data)
         local ok, starts = pcall(N.questStarts, id)
         if ok and starts and #starts > 0 then
             local names = {}
-            for i = 1, min(3, #starts) do
-                local okn, nm = pcall(Q.name, starts[i])
-                names[#names + 1] = okn and nm or ("quest " .. starts[i])
+            for i = 1, #starts do
+                local qm = SFP.QuestMarkers
+                if #names < 3 and (not qm or qm:IsAvailable(starts[i])) then
+                    local okn, nm = pcall(Q.name, starts[i])
+                    names[#names + 1] = okn and nm or ("quest " .. starts[i])
+                end
             end
-            tt:AddLine("Starts: " .. table.concat(names, ", "), 0.6, 1, 0.6, true)
+            if #names > 0 then tt:AddLine("Starts: " .. table.concat(names, ", "), 0.6, 1, 0.6, true) end
         end
     end
     local objq = SFP.QuestObjectiveNpc and SFP:QuestObjectiveNpc(id)

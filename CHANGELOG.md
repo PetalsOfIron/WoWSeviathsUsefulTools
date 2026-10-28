@@ -1,5 +1,8 @@
 # SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
 
+## 1.27.4-mop
+- NPC tooltip "Starts:" lists only quests you can take now (not taken, not done, level and requirements fit)
+
 ## 1.27.3-mop
 - The addon no longer forces friendly NPC nameplates (they could hide the game's own "!" over quest givers; set back to default once) and no longer draws its own "!" over quest givers
 

@@ -306,6 +306,11 @@ local function targetsOf(qid)
     return out
 end
 
+-- can this quest be taken right now? (for the monster / NPC tooltip)
+function Q:IsAvailable(qid)
+    if not Q.enabled then return true end
+    return eligible(qid, true) and true or false
+end
 function Q:LogList() return state.list or {} end
 function Q:GameCount() return state.gameCount end
 
