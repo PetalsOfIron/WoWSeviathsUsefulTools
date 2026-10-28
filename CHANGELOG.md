@@ -1,5 +1,8 @@
 # SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
 
+## 1.27.9-mop
+- Quests you can pick up show on the map and minimap again (Blizzard's tracker and quest log stay)
+
 ## 1.27.8-mop
 - Back to Blizzard's own quest tracker, quest log and "!" marks for quests you can pick up (our tracker / log / available marks are off by default; they can be switched on in the menu). Kept: quest areas, quest monster marks, turn-in marks
 
