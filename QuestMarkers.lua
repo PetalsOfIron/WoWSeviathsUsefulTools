@@ -53,7 +53,7 @@ end
 local function refreshState()
     version = version + 1
     wipe(cache); wipe(elig); wipe(targetsCache); wipe(objNpc)
-    state.level = UnitLevel("player") or 1
+    state.level = math.max(UnitLevel("player") or 1, state.pendingLevel or 0)
     local lib = SFP.QDB
     local _, classFile = UnitClass("player")
     local raceID = select(3, UnitRace("player"))
@@ -371,6 +371,30 @@ function Q:IsAvailable(qid)
     if not Q.enabled then return true end
     return eligible(qid, true) and true or false
 end
+-- quests of this zone that became available because of the new level
+function Q:AnnounceUnlocked(lvl)
+    if not (Q.enabled and lvl and indexed) then return end
+    local Z = zoneDB()
+    local map = C_Map and C_Map.GetBestMapForUnit and C_Map.GetBestMapForUnit("player")
+    local area = Z and map and Z.GetAreaIdByUiMapId and safe(function() return Z:GetAreaIdByUiMapId(map) end)
+    local l = area and startIdx[area]
+    local QD = dbs()
+    if not (l and QD) then return end
+    local names, seen = {}, {}
+    for i = 1, #l, 3 do
+        local qid = l[i]
+        if not seen[qid] and (safe(QD.requiredLevel, qid) or 0) == lvl and eligible(qid, false) then
+            seen[qid] = true
+            names[#names + 1] = questName(qid)
+        end
+    end
+    if #names > 0 then
+        local shown = {}
+        for i = 1, math.min(5, #names) do shown[i] = names[i] end
+        SFP:Print(("Level %d unlocked %d quest(s) here: %s%s"):format(lvl, #names, table.concat(shown, ", "), #names > 5 and ", ..." or ""))
+    end
+end
+
 function Q:LogList() return state.list or {} end
 function Q:GameCount() return state.gameCount end
 
@@ -1305,7 +1329,14 @@ SFP:OnLogin(function()
         "PLAYER_LEVEL_UP", "UNIT_QUEST_LOG_CHANGED", "ZONE_CHANGED_NEW_AREA", "PLAYER_ENTERING_WORLD" }) do
         pcall(ev.RegisterEvent, ev, e)
     end
-    ev:SetScript("OnEvent", function() Q:Refresh() end)
+    ev:SetScript("OnEvent", function(_, event, newLevel)
+        if event == "PLAYER_LEVEL_UP" then
+            -- UnitLevel can still return the old level for a moment: trust the event
+            state.pendingLevel = tonumber(newLevel)
+            C_Timer.After(2, function() SFP:Safe("new quests", function() Q:AnnounceUnlocked(state.pendingLevel) end) end)
+        end
+        Q:Refresh()
+    end)
 
     local acc = 0
     local tick = CreateFrame("Frame")

@@ -1,5 +1,8 @@
 # SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
 
+## 1.29.1-mop
+- Level up: quests unlock right away (the new level comes from the level-up event) and the chat lists the quests of the zone that the new level opened
+
 ## 1.29.0-mop
 - Data/Learned.lua: tools/merge_learned.py copies everything learned (monsters, drops, items, nodes, recipes, farm spots, quest giver positions) from the saved data into the addon folder; a copy of the addon on another account / PC starts with all of it
 
