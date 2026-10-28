@@ -74,7 +74,8 @@ def fetch(kind, id):
     return out
 
 
-work = json.load(open(os.path.join(SP, "qworklist.json")))
+work = json.load(open(os.path.join(SP, sys.argv[1] if len(sys.argv) > 1 else "qworklist.json")))
+work.setdefault("items", [])
 n = 0
 for kind, ids in (("n", work["npcs"]), ("o", work["objs"]), ("i", work["items"])):
     for id in ids:

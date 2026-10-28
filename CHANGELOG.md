@@ -1,5 +1,8 @@
 # SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
 
+## 1.29.0-mop
+- Data/Learned.lua: tools/merge_learned.py copies everything learned (monsters, drops, items, nodes, recipes, farm spots, quest giver positions) from the saved data into the addon folder; a copy of the addon on another account / PC starts with all of it
+
 ## 1.28.1-mop
 - Quest givers / hand-in NPCs: the spot where you really talked to them is remembered (account-wide) and replaces the database position, so marks end up exactly on the NPC
 

@@ -588,6 +588,23 @@ events:SetScript("OnEvent", function(_, event, arg1)
         SeviathsUsefulToolsDB = SeviathsUsefulToolsDB or {}
         copyDefaults(defaults, SeviathsUsefulToolsDB)
         SFP.db = SeviathsUsefulToolsDB
+        -- what the addon learned elsewhere (Data/Learned.lua, see tools/merge_learned.py): fill in what this account lacks
+        local seed = SFP.Seed
+        if seed and SFP.db.seedStamp ~= seed.stamp then
+            local function fill(dst, src, depth)
+                for k, v in pairs(src) do
+                    if dst[k] == nil then dst[k] = v
+                    elseif type(dst[k]) == "table" and type(v) == "table" and depth < 4 then fill(dst[k], v, depth + 1) end
+                end
+            end
+            for _, key in ipairs({ "npcs", "knownItems", "objects", "recipes", "learned", "npcPos", "questSeen" }) do
+                if type(seed[key]) == "table" then
+                    SFP.db[key] = SFP.db[key] or {}
+                    fill(SFP.db[key], seed[key], 1)
+                end
+            end
+            SFP.db.seedStamp = seed.stamp
+        end
         -- 1.3: the map now shows small farm spots; panel + whole-zone glow become opt-in
         if (SFP.db.schema or 1) < 2 then
             SFP.db.zonePanel = false
