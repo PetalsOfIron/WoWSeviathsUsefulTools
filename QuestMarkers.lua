@@ -1185,7 +1185,8 @@ SFP:OnLogin(function()
     if SFP.db.questTrivial == nil then SFP.db.questTrivial = false end
     if SFP.db.questHeads == nil then SFP.db.questHeads = true end
     if SFP.db.questZones == nil then SFP.db.questZones = true end
-    if SFP.db.questAvailV2 == nil then SFP.db.questAvailV2 = true; SFP.db.questAvail = true end -- untaken quests show again, with Blizzard's own "!"
+    if SFP.db.questAvailV2 == nil then SFP.db.questAvailV2 = true; SFP.db.questAvail = true end
+    if not SFP.db.blizzardMarksV1 then SFP.db.blizzardMarksV1 = true; SFP.db.questAvail = false end   -- the game's own quest marks are used for quests you can pick up -- untaken quests show again, with Blizzard's own "!"
     Q.enabled = SFP.db.questMarkers and SFP:HasQuestieDB() and true or false
     if not SFP:HasQuestieDB() then
         C_Timer.After(8, function()

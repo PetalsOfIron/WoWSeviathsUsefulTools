@@ -564,6 +564,12 @@ end
 SFP:OnLogin(function()
     if SFP.db.questTracker == nil then SFP.db.questTracker = true end
     if SFP.db.questLogReplace == nil then SFP.db.questLogReplace = true end
+    -- back to Blizzard's own quest tracker and quest log (once; the options in the menu can bring ours back)
+    if not SFP.db.blizzardTrackerV1 then
+        SFP.db.blizzardTrackerV1 = true
+        SFP.db.questTracker = false
+        SFP.db.questLogReplace = false
+    end
     buildTracker()
     C_Timer.After(12, function()
         UI:ApplyReplace()

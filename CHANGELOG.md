@@ -1,5 +1,8 @@
 # SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
 
+## 1.27.8-mop
+- Back to Blizzard's own quest tracker, quest log and "!" marks for quests you can pick up (our tracker / log / available marks are off by default; they can be switched on in the menu). Kept: quest areas, quest monster marks, turn-in marks
+
 ## 1.27.7-mop
 - Pet battle quests are hidden until pet battles are unlocked for the character
 
