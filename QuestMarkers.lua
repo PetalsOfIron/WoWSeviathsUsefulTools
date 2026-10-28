@@ -173,9 +173,17 @@ local function eligible(qid, trivialOk)
         end
     end
     if ok then
-        local group = safe(QD.preQuestGroup, qid)
+        local single0 = safe(QD.preQuestSingle, qid)
+        local group = not (single0 and #single0 > 0) and safe(QD.preQuestGroup, qid)   -- Questie: group only without single
         if group and #group > 0 then
-            for _, p in ipairs(group) do if not isDone(p) then ok = false; break end end
+            for _, p in ipairs(group) do
+                if not isDone(p) then
+                    -- Questie: a pre-quest also counts when a quest exclusive to it was finished
+                    local any = false
+                    for _, x in ipairs(safe(QD.exclusiveTo, p) or {}) do if isDone(x) then any = true; break end end
+                    if not any then ok = false; break end
+                end
+            end
         end
     end
     if ok then
@@ -185,6 +193,39 @@ local function eligible(qid, trivialOk)
             for _, p in ipairs(single) do if isDone(p) then any = true; break end end
             if not any then ok = false end
         end
+    end
+    if ok then
+        -- reputation (both limits come from the database; the faction has to be known to the player)
+        local mn, mx = safe(QD.requiredMinRep, qid), safe(QD.requiredMaxRep, qid)
+        if (mn or mx) and GetFactionInfoByID then
+            if mn then
+                local _, _, _, _, _, value = GetFactionInfoByID(mn[1])
+                if value == nil or value < mn[2] then ok = false end
+            end
+            if ok and mx then
+                local _, _, _, _, _, value = GetFactionInfoByID(mx[1])
+                if value == nil or value >= mx[2] then ok = false end
+            end
+        end
+    end
+    if ok then
+        local sp = safe(QD.requiredSpell, qid)
+        if sp and sp ~= 0 and IsSpellKnown then
+            local known = IsSpellKnown(math.abs(sp)) and true or false
+            if (sp > 0 and not known) or (sp < 0 and known) then ok = false end
+        end
+    end
+    if ok then
+        -- sub-quests only exist while their parent is in the log; breadcrumbs vanish with the quest they lead to
+        local parent = safe(QD.parentQuest, qid)
+        if parent and parent ~= 0 and not state.inLog[parent] then ok = false end
+        local bf = safe(QD.breadcrumbFor, qid)
+        if ok and bf and bf ~= 0 and (state.inLog[bf] or isDone(bf)) then ok = false end
+        for _, b in ipairs(ok and safe(QD.breadcrumbs, qid) or {}) do if state.inLog[b] then ok = false; break end end
+        local dis = safe(QD.disabledByQuest, qid)
+        if ok and dis and dis ~= 0 and state.inLog[dis] then ok = false end
+        local sw = safe(QD.availableStartingWith, qid)
+        if ok and sw and sw ~= 0 and not (isDone(sw) or state.inLog[sw]) then ok = false end
     end
     if ok then
         local excl = safe(QD.exclusiveTo, qid)

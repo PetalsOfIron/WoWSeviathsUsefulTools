@@ -73,6 +73,20 @@ function Quest.requiredClasses(id) local r = rec("q", id); return r and num(r[5]
 function Quest.requiredMaxLevel(id) local r = rec("q", id); return r and num(r[6]) end
 function Quest.zoneOrSort(id) local r = rec("q", id); return r and num(r[7]) end
 function Quest.nextQuestInChain(id) local r = rec("q", id); return r and num(r[8]) end
+local function pair(s)
+    local a, b = (s or ""):match("^(-?%d+):(-?%d+)$")
+    return a and { tonumber(a), tonumber(b) } or nil
+end
+-- availability rules from the Questie database (fields 23 - 31 of a quest record)
+function Quest.requiredMinRep(id) local r = rec("q", id); return r and pair(r[23]) end
+function Quest.requiredMaxRep(id) local r = rec("q", id); return r and pair(r[24]) end
+function Quest.requiredSpell(id) local r = rec("q", id); return r and num(r[25]) end
+function Quest.parentQuest(id) local r = rec("q", id); return r and num(r[26]) end
+function Quest.breadcrumbFor(id) local r = rec("q", id); return r and num(r[27]) end
+function Quest.breadcrumbs(id) local r = rec("q", id); return r and nums(r[28]) end
+function Quest.disabledByQuest(id) local r = rec("q", id); return r and num(r[29]) end
+function Quest.availableStartingWith(id) local r = rec("q", id); return r and num(r[30]) end
+function Quest.requiredSpecialization(id) local r = rec("q", id); return r and num(r[31]) end
 function Quest.availableUntilCompleted(id) local r = rec("q", id); return r and num(r[9]) end
 function Quest.startedBy(id)
     local r = rec("q", id)

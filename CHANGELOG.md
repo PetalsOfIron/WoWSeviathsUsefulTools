@@ -1,5 +1,8 @@
 # SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
 
+## 1.28.0-mop
+- Quest availability now follows Questie's IsDoable: reputation limits, required spells, parent quests, breadcrumbs, disabling quests, "available starting with", exclusive pre-quests (new data fields)
+
 ## 1.27.9-mop
 - Quests you can pick up show on the map and minimap again (Blizzard's tracker and quest log stay)
 
