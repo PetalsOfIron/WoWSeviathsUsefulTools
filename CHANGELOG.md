@@ -1,5 +1,8 @@
 # SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
 
+## 1.27.3-mop
+- The addon no longer forces friendly NPC nameplates (they could hide the game's own "!" over quest givers; set back to default once) and no longer draws its own "!" over quest givers
+
 ## 1.27.2-mop
 - Tracker: the quest item you have to use gets its button next to the quest (click to use, tooltip, stack count)
 - Profession / skill quests are only shown when you have the skill

@@ -938,7 +938,8 @@ end
 
 local function headIcon(npc)
     if finishSet[npc] then return "turnin" end
-    if SFP.db.questHeads ~= false and startsAvailable(npc) then return "avail" end
+    -- quest givers keep the game's own "!" (ours only when asked for)
+    if SFP.db.questHeadsAvail and startsAvailable(npc) then return "avail" end
     if objSet[npc] then return "kill" end
     return nil
 end
@@ -1177,10 +1178,11 @@ SFP:OnLogin(function()
         canvas:HookScript("OnSizeChanged", function() Q:DrawWorldMap() end)
     end
 
-    -- friendly monsters only get a nameplate (and so an icon) when the game shows friendly NPC plates
-    if SFP.db.questHeads ~= false and not SFP.db.platesSet then
-        SFP.db.platesSet = true
-        pcall(SetCVar, "nameplateShowFriendlyNPCs", 1)
+    -- older versions switched friendly NPC nameplates on; with them on the game's own "!" over quest givers
+    -- can disappear, so put that setting back to the game default once
+    if not SFP.db.friendlyPlatesReset then
+        SFP.db.friendlyPlatesReset = true
+        if SFP.db.platesSet and not InCombatLockdown() then pcall(SetCVar, "nameplateShowFriendlyNPCs", 0) end
     end
     -- enemy nameplates are what carry the marks over quest monsters; switch them on once (V toggles them)
     if SFP.db.questHeads ~= false and not SFP.db.enemyPlatesSet then
