@@ -208,6 +208,11 @@ extraOf = function(kind, id)
     return c
 end
 function Npc.spawns(id)
+    -- the spot where you actually talked to this NPC beats the database (see QuestMarkers: learned positions)
+    local learned = SFP.db and SFP.db.npcPos and SFP.db.npcPos[id]
+    if learned and QD.mapToArea and QD.mapToArea[learned[1]] then
+        return { [QD.mapToArea[learned[1]]] = { { learned[2] * 100, learned[3] * 100 } } }
+    end
     local sp = spawnsOf("n", id, 7)
     if sp then return sp end
     local x = extraOf("n", id)

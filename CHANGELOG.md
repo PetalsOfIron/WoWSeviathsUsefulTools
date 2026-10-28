@@ -1,5 +1,8 @@
 # SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
 
+## 1.28.1-mop
+- Quest givers / hand-in NPCs: the spot where you really talked to them is remembered (account-wide) and replaces the database position, so marks end up exactly on the NPC
+
 ## 1.28.0-mop
 - Quest availability now follows Questie's IsDoable: reputation limits, required spells, parent quests, breadcrumbs, disabling quests, "available starting with", exclusive pre-quests (new data fields)
 

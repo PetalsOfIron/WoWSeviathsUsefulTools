@@ -991,6 +991,27 @@ local function rememberSeen(qids)
     end
     if changed then wipe(cache); if Q.Refresh then Q:Refresh() end end
 end
+-- quest givers and hand-in NPCs: remember where you really stood when you talked to them (the database can be a little off)
+local function learnNpc()
+    if not (C_Map and C_Map.GetBestMapForUnit and C_Map.GetPlayerMapPosition) then return end
+    local guid = UnitGUID("npc")
+    local t, _, _, _, _, id = strsplit("-", guid or "")
+    if t ~= "Creature" and t ~= "Vehicle" then return end
+    id = tonumber(id)
+    local m = C_Map.GetBestMapForUnit("player")
+    local pos = m and C_Map.GetPlayerMapPosition(m, "player")
+    if not (id and pos) then return end
+    local x, y = pos:GetXY()
+    if not x or x == 0 then return end
+    SFP.db.npcPos = SFP.db.npcPos or {}
+    local old = SFP.db.npcPos[id]
+    if old and old[1] == m and (old[2] - x) ^ 2 + (old[3] - y) ^ 2 < 0.004 ^ 2 then return end
+    SFP.db.npcPos[id] = { m, x, y }
+    wipe(cache)
+    if Q.Refresh then Q:Refresh() end
+end
+function Q:LearnNpc() learnNpc() end
+
 function Q:SeenMonster(unit)
     if not (Q.enabled and unit and UnitExists(unit) and not UnitIsPlayer(unit)) then return end
     local _, qids = nameQuests(UnitName(unit))
@@ -1264,8 +1285,14 @@ SFP:OnLogin(function()
     pcall(pev.RegisterEvent, pev, "NAME_PLATE_UNIT_ADDED")
     pcall(pev.RegisterEvent, pev, "NAME_PLATE_UNIT_REMOVED")
     pcall(pev.RegisterEvent, pev, "UPDATE_MOUSEOVER_UNIT")
+    for _, e in ipairs({ "GOSSIP_SHOW", "QUEST_GREETING", "QUEST_DETAIL", "QUEST_PROGRESS", "QUEST_COMPLETE" }) do
+        pcall(pev.RegisterEvent, pev, e)
+    end
     pcall(pev.RegisterEvent, pev, "PLAYER_TARGET_CHANGED")
     pev:SetScript("OnEvent", function(_, event, unit)
+        if event == "GOSSIP_SHOW" or event == "QUEST_GREETING" or event == "QUEST_DETAIL" or event == "QUEST_PROGRESS" or event == "QUEST_COMPLETE" then
+            return SFP:Safe("learn npc", learnNpc)
+        end
         if event == "UPDATE_MOUSEOVER_UNIT" then return SFP:Safe("seen mouseover", function() Q:SeenMonster("mouseover") end) end
         if event == "PLAYER_TARGET_CHANGED" then return SFP:Safe("seen target", function() Q:SeenMonster("target") end) end
         if not Q.enabled or not unit then return end
