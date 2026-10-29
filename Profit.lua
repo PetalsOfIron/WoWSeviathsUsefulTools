@@ -83,9 +83,37 @@ function SFP:GatherLines(kind, id)
     local lines = {}
     local function add(t, r, g, b) lines[#lines + 1] = { t, r or 1, g or 1, b or 1 } end
     -- loot of a kill
-    if kind == "n" and rec.d and (rec.k or 0) >= 3 then
+    if kind == "n" and rec.d and (rec.k or 0) >= 1 then
         local v = dropValue(rec.d, rec.k)
-        if v > 0 then add("|cffffd100Loot worth|r ~" .. money(v) .. " per kill  |cff808080(" .. rec.k .. " kills)|r") end
+        add("|cffffd100Loot worth|r ~" .. money(v) .. " per kill  |cff808080(" .. rec.k .. " kill" .. (rec.k == 1 and "" or "s") ..
+            (rec.k < 5 and ", few samples" or "") .. ")|r")
+        -- is it worth farming? compare with the monsters of about the same level you know
+        local lvl = rec.lmax or rec.lmin
+        if lvl then
+            local best, count, better = nil, 0, 0
+            for oid, o in pairs(SFP.db.npcs) do
+                local ol = o.lmax or o.lmin
+                if oid ~= id and o.d and (o.k or 0) >= 2 and ol and math.abs(ol - lvl) <= 3 then
+                    local ov = dropValue(o.d, o.k)
+                    count = count + 1
+                    if ov > v then better = better + 1 end
+                    if not best or ov > best.v then best = { name = o.n or ("NPC " .. oid), v = ov, lvl = ol } end
+                end
+            end
+            if count >= 2 then
+                if better == 0 then
+                    add("Best of the " .. (count + 1) .. " level " .. (lvl - 3) .. "-" .. (lvl + 3) .. " monsters you know - worth farming", 0.3, 1, 0.3)
+                elseif v >= best.v * 0.7 then
+                    add("Good: close to the best nearby (" .. best.name .. " ~" .. money(best.v) .. ")", 0.3, 1, 0.3)
+                elseif v >= best.v * 0.4 then
+                    add("Average - better: " .. best.name .. " ~" .. money(best.v) .. " per kill", 1, 0.9, 0.3)
+                else
+                    add("Not worth farming - go for " .. best.name .. " ~" .. money(best.v) .. " per kill", 1, 0.4, 0.3)
+                end
+            elseif v <= 0 then
+                add("Drops nothing of value", 1, 0.4, 0.3)
+            end
+        end
     end
     local groups = rankings()
     local group, own, samples

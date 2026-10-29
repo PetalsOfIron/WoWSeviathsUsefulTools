@@ -1,5 +1,8 @@
 # SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
 
+## 1.40.0-mop
+- Monster tooltip: loot value per kill from the first kill on, and whether it is worth farming compared with the monsters of about the same level you know (best / good / average / not worth it)
+
 ## 1.39.1-mop
 - World map: any tooltip the game or another addon already shows for something under the cursor wins over ours (farm / gathering / rare spots)
 
