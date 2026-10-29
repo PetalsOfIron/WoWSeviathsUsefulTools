@@ -120,7 +120,7 @@ local function typicalLines(typeName, add)
     else
         add("Better here: " .. GROUP_OWNER[bestG] .. " (~" .. money(bestV) .. " per kill)", 1, 0.9, 0.3)
     end
-    return true
+    return true, value
 end
 
 -- items the addon lists for a monster (farm data and the quest database), with auction house prices
@@ -141,8 +141,36 @@ local function listedDrops(npcID)
     return rows
 end
 
+-- other monsters of the SAME creature type (about the same level) that you know are worth more per kill
+local function sameTypeAdvice(typeName, lvl, ownV, excludeId, add)
+    if not typeName then return false end
+    local best, count = nil, 0
+    for oid, o in pairs(SFP.db.npcs) do
+        local ol = o.lmax or o.lmin
+        if oid ~= excludeId and o.t == typeName and o.d and (o.k or 0) >= 1 and (not lvl or not ol or math.abs(ol - lvl) <= 4) then
+            local ov = dropValue(o.d, o.k)
+            count = count + 1
+            if not best or ov > best.v then
+                local map = o.m and next(o.m)
+                best = { name = o.n or ("NPC " .. oid), v = ov, lvl = ol, zone = map and SFP:ZoneName(map) or nil }
+            end
+        end
+    end
+    if not best then
+        add("No other " .. typeName:lower() .. " of your level known yet - kill and loot some to compare", 0.6, 0.6, 0.6)
+        return true
+    end
+    local where = (best.zone and (best.zone .. ", ") or "") .. (best.lvl and ("lvl " .. best.lvl) or "")
+    if best.v > ownV * 1.15 then
+        add("Better " .. typeName:lower() .. ": " .. best.name .. " (" .. where .. ") ~" .. money(best.v) .. " per kill", 1, 0.9, 0.3)
+    else
+        add("Best " .. typeName:lower() .. " you know at this level (next: " .. best.name .. " ~" .. money(best.v) .. ")", 0.3, 1, 0.3)
+    end
+    return true
+end
+
 -- lines for the tooltip of a monster (kind "n") or a gathering node (kind "o")
-function SFP:GatherLines(kind, id, creatureType)
+function SFP:GatherLines(kind, id, creatureType, unitLevel)
     local rec = (kind == "o" and self.db.objects or self.db.npcs)[id]
     if not rec then
         if kind ~= "n" then return nil end
@@ -156,8 +184,11 @@ function SFP:GatherLines(kind, id, creatureType)
         add("|cffffd100Loot worth|r ~" .. money(v) .. " per kill  |cff808080(" .. rec.k .. " kill" .. (rec.k == 1 and "" or "s") ..
             (rec.k < 5 and ", few samples" or "") .. ")|r")
         -- is it worth farming? compare with the monsters of about the same level you know
-        local lvl = rec.lmax or rec.lmin
-        if lvl then
+        local lvl = rec.lmax or rec.lmin or unitLevel
+        local typeName = creatureType or rec.t
+        if typeName and sameTypeAdvice(typeName, lvl, v, id, add) then
+            -- same creature type compared (humanoid with humanoids, beast with beasts ...)
+        elseif lvl then
             local best, count, better = nil, 0, 0
             for oid, o in pairs(SFP.db.npcs) do
                 local ol = o.lmax or o.lmin
@@ -187,7 +218,8 @@ function SFP:GatherLines(kind, id, creatureType)
     local learnedLoot = kind == "n" and rec.d and next(rec.d) and (rec.k or 0) >= 1
     if kind == "n" and not learnedLoot then
         local rows = listedDrops(id)
-        local typical = typicalLines(creatureType or rec.t, add)
+        local typical, tval = typicalLines(creatureType or rec.t, add)
+        if (creatureType or rec.t) then sameTypeAdvice(creatureType or rec.t, rec.lmax or rec.lmin or unitLevel, tval or 0, id, add) end
         if #rows > 0 then
             local total = 0
             for _, r in ipairs(rows) do total = total + r.p end

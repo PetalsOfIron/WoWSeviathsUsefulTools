@@ -1,5 +1,8 @@
 # SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
 
+## 1.43.0-mop
+- Monsters are compared inside their own creature type: a humanoid suggests better humanoids (name, zone, level, value per kill), a beast better beasts, and so on, from the monsters you have killed and looted
+
 ## 1.42.0-mop
 - Humanoids, undead, beasts, dragonkin and elementals show what that creature type usually drops in the zone (cloth, leather, motes) at auction prices, an estimated value per kill, and which kind of monster is best to grind here
 
