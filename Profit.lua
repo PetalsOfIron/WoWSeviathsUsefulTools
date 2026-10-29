@@ -76,10 +76,31 @@ local function rankings()
     return groups
 end
 
+-- items the addon lists for a monster (farm data and the quest database), with auction house prices
+local function listedDrops(npcID)
+    local set, list = {}, {}
+    local function add(id)
+        if id and not set[id] then set[id] = true; list[#list + 1] = id end
+    end
+    for _, id in ipairs(SFP.farmNpc and SFP.farmNpc[npcID] or {}) do add(id) end
+    for _, id in ipairs(SFP.QuestieDropsOf and SFP:QuestieDropsOf(npcID) or {}) do add(id) end
+    local rows = {}
+    for _, id in ipairs(list) do
+        SFP.trackedIDs[id] = true   -- the next auction scan covers it
+        local p, ah = price(id)
+        rows[#rows + 1] = { id = id, p = p, ah = ah }
+    end
+    table.sort(rows, function(a, b) return a.p > b.p end)
+    return rows
+end
+
 -- lines for the tooltip of a monster (kind "n") or a gathering node (kind "o")
 function SFP:GatherLines(kind, id)
     local rec = (kind == "o" and self.db.objects or self.db.npcs)[id]
-    if not rec then return nil end
+    if not rec then
+        if kind ~= "n" then return nil end
+        rec = {}   -- never seen it die: the listed items still say something
+    end
     local lines = {}
     local function add(t, r, g, b) lines[#lines + 1] = { t, r or 1, g or 1, b or 1 } end
     -- loot of a kill
@@ -113,6 +134,31 @@ function SFP:GatherLines(kind, id)
             elseif v <= 0 then
                 add("Drops nothing of value", 1, 0.4, 0.3)
             end
+        end
+    end
+    -- no loot learned yet: judge it by the items the addon lists for it, at auction house prices
+    local learnedLoot = kind == "n" and rec.d and next(rec.d) and (rec.k or 0) >= 1
+    if kind == "n" and not learnedLoot then
+        local rows = listedDrops(id)
+        if #rows > 0 then
+            local total = 0
+            for _, r in ipairs(rows) do total = total + r.p end
+            add("|cffffd100Listed drops|r (auction prices, drop chance unknown):")
+            for i = 1, math.min(4, #rows) do
+                local r = rows[i]
+                add("  " .. SFP:ItemName(r.id) .. "  " .. (r.p > 0 and money(r.p) or "no price") .. (r.ah and "" or (r.p > 0 and "  |cff808080(vendor)|r" or "")))
+            end
+            if #rows > 4 then add("  +" .. (#rows - 4) .. " more", 0.6, 0.6, 0.6) end
+            local best = rows[1]
+            if best.p <= 0 then
+                add("No price known yet - open the auction house once", 0.6, 0.6, 0.6)
+            elseif best.p < 50000 then
+                add("Cheap drops: probably not worth farming for gold", 1, 0.5, 0.3)
+            else
+                add("Best drop " .. SFP:ItemName(best.id) .. " sells for " .. money(best.p) .. " - worth a look", 0.3, 1, 0.3)
+            end
+        else
+            add("No drops known for it yet - kill it and loot to learn them", 0.6, 0.6, 0.6)
         end
     end
     local groups = rankings()

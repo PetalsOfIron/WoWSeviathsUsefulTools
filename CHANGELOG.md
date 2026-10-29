@@ -1,5 +1,8 @@
 # SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
 
+## 1.41.0-mop
+- Monster tooltip shows value from the first sight: the items the addon lists for the monster (farm data + quest database) at auction house prices, before anything is learned; the learned loot takes over after you kill it
+
 ## 1.40.0-mop
 - Monster tooltip: loot value per kill from the first kill on, and whether it is worth farming compared with the monsters of about the same level you know (best / good / average / not worth it)
 
