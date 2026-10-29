@@ -549,6 +549,11 @@ for _, e in ipairs({ "UPDATE_MOUSEOVER_UNIT", "PLAYER_TARGET_CHANGED", "LOOT_REA
 end
 local recipeTimer
 ev:SetScript("OnEvent", function(_, event, a, b, c, d)
+    -- "Learn everything constantly" off: nothing new is recorded (tooltips keep working)
+    if SFP.db and SFP.db.learnAll == false and (event == "UPDATE_MOUSEOVER_UNIT" or event == "PLAYER_TARGET_CHANGED"
+        or event == "LOOT_READY" or event == "BAG_UPDATE_DELAYED" or event == "TRADE_SKILL_SHOW" or event == "TRADE_SKILL_LIST_UPDATE") then
+        return
+    end
     if not SFP.db then return end
     if event == "UPDATE_MOUSEOVER_UNIT" then
         SFP:Safe("record mouseover", recordUnit, "mouseover")

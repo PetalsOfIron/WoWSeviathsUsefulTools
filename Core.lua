@@ -723,6 +723,9 @@ SlashCmdList["SEVIATHSUSEFULTOOLS"] = function(msg)
         if SFP.QuestMarkers then SFP.QuestMarkers:Debug() end
     elseif cmd == "questcompare" then
         if SFP.QuestMarkers and SFP.QuestMarkers.Compare then SFP.QuestMarkers:Compare() end
+    elseif cmd == "learnall" then
+        SFP.db.learnAll = (SFP.db.learnAll == false)
+        SFP:Print("Learning everything constantly " .. (SFP.db.learnAll and "ON" or "OFF") .. " (saved to the addon folder with tools/watch_learned.py)")
     elseif cmd == "craft" then
         if SFP.PrintCraftProfit then SFP:PrintCraftProfit() end
     elseif cmd == "income" then

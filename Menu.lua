@@ -191,6 +191,8 @@ local function buildSettings(pane)
             function(v) SFP.db.auctionSold = v end, 260, -92),
         mkCheck(pane, "Chat message for gold from the mailbox / vendor", function() return SFP.db.incomeMessages ~= false end,
             function(v) SFP.db.incomeMessages = v end, 260, -118),
+        mkCheck(pane, "Learn everything constantly (monsters, items, quests, positions)", function() return SFP.db.learnAll ~= false end,
+            function(v) SFP.db.learnAll = v end, 12, -144),
         mkCheck(pane, "Learn farm spots from my loot", function() return SFP.db.learn end, function(v) SFP.db.learn = v end, 12, -66),
         mkCheck(pane, "Show the minimap button", function() return not SFP.db.minimap.hide end,
             function(v) SFP.db.minimap.hide = not v; SFP:RefreshAll() end, 12, -92),

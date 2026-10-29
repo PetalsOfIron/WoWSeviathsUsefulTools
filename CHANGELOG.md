@@ -1,5 +1,9 @@
 # SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
 
+## 1.37.0-mop
+- Option "Learn everything constantly" (menu, /sfp learnall): monsters, drops, items, nodes, recipes, quest giver positions and quest monster places are recorded all the time
+- tools/watch_learned.py (start_watch_learned.bat): keeps Data/Learned.lua in the addon folder up to date whenever the game saves (/reload or logout)
+
 ## 1.36.0-mop
 - Minimap: the areas where your quest objectives are (kill / collect / use) and your hand-ins are drawn on the minimap again, retail-style translucent areas (menu: "Quest areas on the minimap"); the game's own marks are used for quest givers
 

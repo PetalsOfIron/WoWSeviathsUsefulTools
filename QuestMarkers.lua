@@ -1030,6 +1030,7 @@ local function nameQuests(name)
 end
 -- where you met monsters of a quest whose spawn points the database lacks: remembered account-wide
 local function rememberSeen(qids)
+    if SFP.db.learnAll == false then return end
     if not (qids and C_Map and C_Map.GetBestMapForUnit and C_Map.GetPlayerMapPosition) then return end
     local m = C_Map.GetBestMapForUnit("player")
     local pos = m and C_Map.GetPlayerMapPosition(m, "player")
@@ -1051,6 +1052,7 @@ local function rememberSeen(qids)
 end
 -- quest givers and hand-in NPCs: remember where you really stood when you talked to them (the database can be a little off)
 local function learnNpc()
+    if SFP.db.learnAll == false then return end
     if not (C_Map and C_Map.GetBestMapForUnit and C_Map.GetPlayerMapPosition) then return end
     local guid = UnitGUID("npc")
     local t, _, _, _, _, id = strsplit("-", guid or "")
