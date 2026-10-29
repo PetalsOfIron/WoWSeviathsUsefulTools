@@ -17,6 +17,7 @@ local LAYERS = {
     { "showMining",   "Mining",        "Interface\\Icons\\Trade_Mining",     "Pick symbols in the best zone of each ore - hover for every ore around it" },
     { "showHerbs",    "Herbalism",     "Interface\\Icons\\Trade_Herbalism",  "Flower symbols in the best zone of each herb - hover for every herb around it" },
     { "showGatherList", "Gathering list", "Interface\\Icons\\INV_Misc_Bag_10", "Side list on zone maps: this expansion's ores and herbs and the best zone for each" },
+    { "showSpotList", "Spot list", "Interface\\Icons\\INV_Misc_Map_01", "Side list on zone maps: every farm spot of the zone with a checkbox - untick a spot to hide it on the map and the minimap" },
     { "showDungeons", "Dungeons",      "Interface\\Minimap\\Dungeon",        "Dungeon entrances - hover for loot" },
     { "showRaids",    "Raids",         "Interface\\Minimap\\Raid",           "Raid entrances - hover for loot" },
     { "learn",        "Learn from my loot", "Interface\\Icons\\INV_Misc_Book_09", "Remember where you loot cloth, leather, meat, special materials and BoEs, and show those places as farm spots with your own drop rates" },

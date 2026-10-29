@@ -367,7 +367,21 @@ local function spotColor(sp)
     if sp.gather then return sp.gather == "ore" and ORE or HERB end
     return sp.hunter and HUNTER or sp.rare and RARE or sp.special and SPECIAL or C()
 end
+-- one id per farm spot, for the "switched off" list (survives reloads)
+local function spotKey(sp)
+    local k = sp._key
+    if not k then
+        k = sp.gather and ("g" .. tostring(sp.items and sp.items[1])) or ("n" .. (sp.npc or 0) .. "|" .. tostring(sp.name))
+        sp._key = k
+    end
+    return k
+end
+SFP.SpotKey = spotKey
+SFP.hiddenVer = 0   -- changes whenever a spot is switched on or off (drawing caches include it)
+
 local function showSpot(sp)
+    local hid = SFP.db.hiddenSpots
+    if hid and hid[spotKey(sp)] then return false end
     if sp.gather then return sp.gather == "ore" and SFP.db.showMining or sp.gather == "herb" and SFP.db.showHerbs or false end
     if sp.hunter then return SFP.db.showHunter end
     if sp.rare then return SFP.db.showRares end
@@ -446,7 +460,7 @@ end
 local function spawnClusters(zone)
     local exact = SFP.db.exactSpots
     local key = (SFP.db.showSpawns and "f" or "") .. (SFP.db.showRares and "r" or "") ..
-        (SFP.db.showSpecial and "s" or "") .. (SFP.db.showHunter and "h" or "") .. (exact and "x" or "")
+        (SFP.db.showSpecial and "s" or "") .. (SFP.db.showHunter and "h" or "") .. (exact and "x" or "") .. SFP.hiddenVer
     local radius = exact and 0.0035 or AREA_R
     zone._areas = zone._areas or {}
     if zone._areas[key] then return zone._areas[key] end
@@ -575,7 +589,7 @@ end
 -- areas; each area gets one symbol listing every material found around it.
 local CLUSTER_R = 0.12
 local function gatherClusters(zone)
-    local key = (SFP.db.showMining and "o" or "") .. (SFP.db.showHerbs and "h" or "")
+    local key = (SFP.db.showMining and "o" or "") .. (SFP.db.showHerbs and "h" or "") .. SFP.hiddenVer
     zone._clusters = zone._clusters or {}
     if zone._clusters[key] then return zone._clusters[key] end
     local list = {}
@@ -1009,6 +1023,220 @@ local function drawGatherList(mapID)
 end
 
 ---------------------------------------------------------------------------
+-- Farm spot list (left side of the zone map): every spot of the zone with a
+-- checkbox; unticked spots disappear from the map and the minimap.
+---------------------------------------------------------------------------
+local spotPanel
+local SROW_H = 18
+
+local SPOT_GROUPS = {
+    { "farm", "Farm monsters" }, { "rare", "Rares" }, { "hunter", "Hunter tames" },
+    { "special", "Special materials" }, { "ore", "Mining spots" }, { "herb", "Herb spots" },
+}
+
+local function spotGroup(s)
+    return s.gather or spotCat(s)
+end
+
+local function groupOn(g)
+    local db = SFP.db
+    if g == "farm" then return db.showSpawns elseif g == "rare" then return db.showRares
+    elseif g == "hunter" then return db.showHunter elseif g == "special" then return db.showSpecial
+    elseif g == "ore" then return db.showMining elseif g == "herb" then return db.showHerbs end
+    return true
+end
+
+local function spotEntries(zone)
+    local by = {}
+    for _, s in ipairs(zone.spawns or {}) do
+        if s.points then
+            local g = spotGroup(s)
+            by[g] = by[g] or {}
+            by[g][#by[g] + 1] = s
+        end
+    end
+    local out = {}
+    for _, grp in ipairs(SPOT_GROUPS) do
+        local list = by[grp[1]]
+        if list then
+            table.sort(list, function(a, b) return tostring(a.name) < tostring(b.name) end)
+            out[#out + 1] = { header = grp[2], group = grp[1] }
+            for _, s in ipairs(list) do out[#out + 1] = { spot = s, group = grp[1] } end
+        end
+    end
+    return out
+end
+
+local function setSpotsHidden(zone, keys, hide)
+    SFP.db.hiddenSpots = SFP.db.hiddenSpots or {}
+    for _, k in ipairs(keys) do SFP.db.hiddenSpots[k] = hide and true or nil end
+    SFP.hiddenVer = SFP.hiddenVer + 1
+    zone._areas, zone._clusters = nil, nil
+    SFP.RefreshWorldMap()
+end
+
+local drawSpotList
+
+local function buildSpotPanel()
+    local sc = WorldMapFrame.ScrollContainer
+    local f = CreateFrame("Frame", "SeviathsUsefulToolsSpotList", sc, "BackdropTemplate")
+    f:SetFrameStrata("HIGH")
+    f:SetWidth(250)
+    f:SetPoint("TOPLEFT", sc, "TOPLEFT", 8, -8)
+    f:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8x8", edgeFile = "Interface\\Buttons\\WHITE8x8", edgeSize = 1 })
+    f:SetBackdropColor(0.02, 0.05, 0.06, 0.88)
+    f:SetBackdropBorderColor(0, 0.9, 1, 0.8)
+    f:EnableMouse(true)
+    f:EnableMouseWheel(true)
+    f:SetScript("OnMouseWheel", function(self, delta)
+        self.offset = (self.offset or 0) - delta * 3
+        if self.mapID then drawSpotList(self.mapID) end
+    end)
+
+    f.head = CreateFrame("Button", nil, f)
+    f.head:SetPoint("TOPLEFT", 0, 0)
+    f.head:SetPoint("TOPRIGHT", 0, 0)
+    f.head:SetHeight(20)
+    f.title = f.head:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    f.title:SetPoint("LEFT", 7, 0)
+    f.toggle = f.head:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    f.toggle:SetPoint("RIGHT", -7, 0)
+    f.head:SetScript("OnClick", function()
+        SFP.db.spotsCollapsed = not SFP.db.spotsCollapsed
+        SFP.RefreshWorldMap()
+    end)
+
+    local function link(text, anchor, x)
+        local b = CreateFrame("Button", nil, f)
+        b:SetSize(60, 16)
+        b:SetPoint("TOPLEFT", x, -21)
+        b.text = b:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        b.text:SetPoint("LEFT")
+        b.text:SetText("|cff00e5ff" .. text .. "|r")
+        b:SetWidth(b.text:GetStringWidth() + 4)
+        return b
+    end
+    f.allOn = link("Show all", nil, 8)
+    f.allOff = link("Hide all", nil, 70)
+    f.rows = {}
+    return f
+end
+
+local function spotRow(i)
+    local r = spotPanel.rows[i]
+    if r then return r end
+    r = CreateFrame("Button", nil, spotPanel)
+    r:SetHeight(SROW_H)
+    r.check = CreateFrame("CheckButton", nil, r, "UICheckButtonTemplate")
+    r.check:SetSize(20, 20)
+    r.check:SetPoint("LEFT", 0, 0)
+    r.check:SetScript("OnClick", function(self)
+        local s = r.spot
+        if not s then return end
+        local zone = SFP.zoneByMap[spotPanel.mapID]
+        if zone then setSpotsHidden(zone, { spotKey(s) }, not self:GetChecked()) end
+    end)
+    r.dot = r:CreateTexture(nil, "ARTWORK")
+    r.dot:SetSize(9, 9)
+    r.dot:SetPoint("LEFT", r.check, "RIGHT", 1, 0)
+    r.dot:SetTexture("Interface\\CHARACTERFRAME\\TempPortraitAlphaMask")
+    r.name = r:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    r.name:SetPoint("LEFT", r.dot, "RIGHT", 4, 0)
+    r.name:SetPoint("RIGHT", r, "RIGHT", -2, 0)
+    r.name:SetJustifyH("LEFT")
+    r:SetHighlightTexture("Interface\\Buttons\\UI-Listbox-Highlight2", "ADD")
+    r:RegisterForClicks("LeftButtonUp")
+    r:SetScript("OnEnter", function(self)
+        local s = self.spot
+        if not s then return end
+        local c = spotColor(s)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine(s.name or "?", c.r, c.g, c.b)
+        for n, id in ipairs(s.items or {}) do
+            if n > 6 then break end
+            GameTooltip:AddLine("|T" .. SFP:ItemIcon(id) .. ":12|t " .. SFP:ItemName(id))
+        end
+        if s.hx then GameTooltip:AddLine(string.format("%.1f, %.1f", s.hx * 100, s.hy * 100), 1, 0.82, 0) end
+        GameTooltip:AddLine("Tick / untick: show or hide this spot", 0, 0.9, 1)
+        GameTooltip:AddLine("Click the name: set a waypoint", 0, 0.9, 1)
+        GameTooltip:Show()
+    end)
+    r:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    r:SetScript("OnClick", function(self)
+        local s = self.spot
+        if s and s.hx and SFP.SetWaypoint then SFP:SetWaypoint(spotPanel.mapID, s.hx, s.hy, s.name) end
+    end)
+    spotPanel.rows[i] = r
+    return r
+end
+
+drawSpotList = function(mapID)
+    local zone = SFP.zoneByMap[mapID]
+    if not zone or not zone.spawns or #zone.spawns == 0 then
+        if spotPanel then spotPanel:Hide() end
+        return
+    end
+    spotPanel = spotPanel or buildSpotPanel()
+    spotPanel.mapID = mapID
+    local entries = spotEntries(zone)
+    local nSpots, nHidden, keys = 0, 0, {}
+    for _, e in ipairs(entries) do
+        if e.spot then
+            nSpots = nSpots + 1
+            keys[#keys + 1] = spotKey(e.spot)
+            if SFP.db.hiddenSpots and SFP.db.hiddenSpots[spotKey(e.spot)] then nHidden = nHidden + 1 end
+        end
+    end
+    spotPanel.title:SetText("|c" .. SFP.CYAN_HEX .. "Farm spots|r  |cffaaaaaa" .. (nSpots - nHidden) .. "/" .. nSpots .. "|r")
+    spotPanel.toggle:SetText(SFP.db.spotsCollapsed and "[+]" or "[-]")
+    spotPanel.allOn:SetScript("OnClick", function() setSpotsHidden(zone, keys, false) end)
+    spotPanel.allOff:SetScript("OnClick", function() setSpotsHidden(zone, keys, true) end)
+    spotPanel.allOn:SetShown(not SFP.db.spotsCollapsed)
+    spotPanel.allOff:SetShown(not SFP.db.spotsCollapsed)
+
+    local shown = 0
+    if not SFP.db.spotsCollapsed then
+        local sc = WorldMapFrame.ScrollContainer
+        local maxRows = math.max(6, math.floor((sc:GetHeight() - 80) / SROW_H))
+        local maxOffset = math.max(0, #entries - maxRows)
+        spotPanel.offset = math.min(math.max(spotPanel.offset or 0, 0), maxOffset)
+        for i = 1, math.min(maxRows, #entries - spotPanel.offset) do
+            local e = entries[spotPanel.offset + i]
+            shown = shown + 1
+            local r = spotRow(shown)
+            r:ClearAllPoints()
+            r:SetPoint("TOPLEFT", 4, -38 - (shown - 1) * SROW_H)
+            r:SetPoint("TOPRIGHT", -4, -38 - (shown - 1) * SROW_H)
+            if e.header then
+                r.spot = nil
+                r.check:Hide(); r.dot:Hide()
+                r.name:ClearAllPoints()
+                r.name:SetPoint("LEFT", r, "LEFT", 4, 0)
+                r.name:SetPoint("RIGHT", r, "RIGHT", -2, 0)
+                r.name:SetText("|cffffd100" .. e.header .. "|r" .. (groupOn(e.group) and "" or "  |cff808080(off in the menu)|r"))
+            else
+                local s = e.spot
+                local off = SFP.db.hiddenSpots and SFP.db.hiddenSpots[spotKey(s)]
+                r.spot = s
+                r.check:Show(); r.dot:Show()
+                r.check:SetChecked(not off)
+                r.name:ClearAllPoints()
+                r.name:SetPoint("LEFT", r.dot, "RIGHT", 4, 0)
+                r.name:SetPoint("RIGHT", r, "RIGHT", -2, 0)
+                local c = spotColor(s)
+                r.dot:SetVertexColor(c.r, c.g, c.b, off and 0.3 or 1)
+                local star = s.grind and (STAR .. " ") or ""
+                r.name:SetText(off and ("|cff808080" .. tostring(s.name) .. "|r") or (star .. tostring(s.name)))
+            end
+            r:Show()
+        end
+    end
+    for i = shown + 1, #spotPanel.rows do spotPanel.rows[i]:Hide() end
+    spotPanel:SetHeight((SFP.db.spotsCollapsed and 22) or (42 + shown * SROW_H))
+    spotPanel:Show()
+end
+
+---------------------------------------------------------------------------
 -- Whole-zone hover tooltip (only with the whole-zone glow option)
 ---------------------------------------------------------------------------
 local lastSpot, lastScale, lastZoomed
@@ -1100,6 +1328,7 @@ refresh = function()
     clearSpawns()
     panel:Hide()
     if gatherPanel then gatherPanel:Hide() end
+    if spotPanel then spotPanel:Hide() end
     for _, e in ipairs(edges) do e:Hide() end
     if WorldMapFrame:IsShown() and WorldMapFrame:GetMapID() and SFP.QuestMarkers then
         SFP:Safe("quest zones", SFP.QuestMarkers.DrawZones, SFP.QuestMarkers, WorldMapFrame:GetMapID())
@@ -1114,6 +1343,7 @@ refresh = function()
         local zoneType = Enum and Enum.UIMapType and Enum.UIMapType.Zone or 3
         if SFP.zoneByMap[mapID] or (info and info.mapType == zoneType) then drawGatherList(mapID) end
     end
+    if SFP.db.showSpotList and SFP.zoneByMap[mapID] then drawSpotList(mapID) end
 
     if SFP.zoneByMap[mapID] then
         -- inside a farm zone

@@ -1,5 +1,8 @@
 # SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
 
+## 1.49.0-mop
+- Farm spot list on the left of every zone map: all farm monsters, rares, hunter tames, special materials, ore and herb spots of the zone, each with its own checkbox (untick = hidden on the map and the minimap), Show all / Hide all, mouse wheel scrolling, click a name for a waypoint, [-]/[+] to fold it. Switch the list off in the menu ("Farm spot list").
+
 ## 1.48.2-mop
 - Minimap farm spots no longer need HereBeDragons (Questie, RareScanner ...): without it the addon places them itself, following the minimap zoom and rotation
 
