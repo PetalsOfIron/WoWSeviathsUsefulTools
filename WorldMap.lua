@@ -1038,6 +1038,12 @@ local function onUpdate(self, elapsed)
 
     -- a quest (or any other map pin) under the cursor comes first: its own tooltip is shown, not ours
     local focus = (GetMouseFoci and GetMouseFoci()[1]) or (GetMouseFocus and GetMouseFocus())
+    local other = GameTooltip:IsShown() and GameTooltip:GetOwner()
+    if other and other ~= UIParent and other ~= tip and other.IsMouseOver and other:IsMouseOver() then
+        -- the game / another addon already shows a tooltip for something under the cursor: that one wins
+        if lastSpot or lastHover then tip:Hide(); lastSpot, lastHover = nil, nil end
+        return
+    end
     if focus and (focus.questID or focus.pinTemplate or focus.owningMap or focus.poiInfo) then
         if lastSpot or lastHover then tip:Hide(); lastSpot, lastHover = nil, nil end
         return

@@ -1,5 +1,8 @@
 # SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
 
+## 1.39.1-mop
+- World map: any tooltip the game or another addon already shows for something under the cursor wins over ours (farm / gathering / rare spots)
+
 ## 1.39.0-mop
 - World map: when the cursor is on a quest (or any other map pin) the quest tooltip comes first; the farm / rare / monster spot tooltip is not drawn on top of it
 
