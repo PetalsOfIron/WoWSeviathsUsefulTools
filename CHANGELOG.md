@@ -1,5 +1,8 @@
 # SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
 
+## 1.44.0-mop
+- Tooltip: a clear "Worth grinding: YES / MAYBE / NO" line for monsters (and worth gathering / skinning for plants, ore and skins), from the value per kill against the best monster of the same type you know
+
 ## 1.43.0-mop
 - Monsters are compared inside their own creature type: a humanoid suggests better humanoids (name, zone, level, value per kill), a beast better beasts, and so on, from the monsters you have killed and looted
 

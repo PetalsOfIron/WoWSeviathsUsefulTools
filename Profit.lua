@@ -166,7 +166,22 @@ local function sameTypeAdvice(typeName, lvl, ownV, excludeId, add)
     else
         add("Best " .. typeName:lower() .. " you know at this level (next: " .. best.name .. " ~" .. money(best.v) .. ")", 0.3, 1, 0.3)
     end
-    return true
+    return true, best.v
+end
+
+-- one clear answer: is it worth grinding?
+local function verdict(own, bestOther)
+    if not own then return { "|cffffd100Worth grinding:|r unknown - open the auction house for prices", 0.7, 0.7, 0.7 } end
+    if bestOther and bestOther > 0 then
+        local r = own / bestOther
+        if r >= 0.85 then return { "|cffffd100Worth grinding:|r |cff40ff40YES|r - as good as the best you know (~" .. money(own) .. " per kill)", 0.8, 1, 0.8 } end
+        if r >= 0.5 then return { "|cffffd100Worth grinding:|r |cffffd040MAYBE|r - ~" .. money(own) .. " per kill, better ones exist", 1, 0.95, 0.7 } end
+        return { "|cffffd100Worth grinding:|r |cffff6040NO|r - ~" .. money(own) .. " per kill, much better ones exist", 1, 0.75, 0.7 }
+    end
+    -- nothing to compare with yet: judge the amount itself
+    if own >= 5000 then return { "|cffffd100Worth grinding:|r |cff40ff40YES|r - ~" .. money(own) .. " per kill  |cff808080(no comparison yet)|r", 0.8, 1, 0.8 } end
+    if own >= 1500 then return { "|cffffd100Worth grinding:|r |cffffd040MAYBE|r - ~" .. money(own) .. " per kill  |cff808080(no comparison yet)|r", 1, 0.95, 0.7 } end
+    return { "|cffffd100Worth grinding:|r |cffff6040NO|r - only ~" .. money(own) .. " per kill  |cff808080(no comparison yet)|r", 1, 0.75, 0.7 }
 end
 
 -- lines for the tooltip of a monster (kind "n") or a gathering node (kind "o")
@@ -178,15 +193,19 @@ function SFP:GatherLines(kind, id, creatureType, unitLevel)
     end
     local lines = {}
     local function add(t, r, g, b) lines[#lines + 1] = { t, r or 1, g or 1, b or 1 } end
+    local ownV, cmpV   -- value per kill of this monster and of the best other one of its type
     -- loot of a kill
     if kind == "n" and rec.d and (rec.k or 0) >= 1 then
         local v = dropValue(rec.d, rec.k)
+        ownV = v
         add("|cffffd100Loot worth|r ~" .. money(v) .. " per kill  |cff808080(" .. rec.k .. " kill" .. (rec.k == 1 and "" or "s") ..
             (rec.k < 5 and ", few samples" or "") .. ")|r")
         -- is it worth farming? compare with the monsters of about the same level you know
         local lvl = rec.lmax or rec.lmin or unitLevel
         local typeName = creatureType or rec.t
-        if typeName and sameTypeAdvice(typeName, lvl, v, id, add) then
+        local sameOk
+        if typeName then sameOk, cmpV = sameTypeAdvice(typeName, lvl, v, id, add) end
+        if sameOk then
             -- same creature type compared (humanoid with humanoids, beast with beasts ...)
         elseif lvl then
             local best, count, better = nil, 0, 0
@@ -219,7 +238,11 @@ function SFP:GatherLines(kind, id, creatureType, unitLevel)
     if kind == "n" and not learnedLoot then
         local rows = listedDrops(id)
         local typical, tval = typicalLines(creatureType or rec.t, add)
-        if (creatureType or rec.t) then sameTypeAdvice(creatureType or rec.t, rec.lmax or rec.lmin or unitLevel, tval or 0, id, add) end
+        ownV = tval
+        if (creatureType or rec.t) then
+            local _, bv = sameTypeAdvice(creatureType or rec.t, rec.lmax or rec.lmin or unitLevel, tval or 0, id, add)
+            cmpV = bv
+        end
         if #rows > 0 then
             local total = 0
             for _, r in ipairs(rows) do total = total + r.p end
@@ -230,6 +253,7 @@ function SFP:GatherLines(kind, id, creatureType, unitLevel)
             end
             if #rows > 4 then add("  +" .. (#rows - 4) .. " more", 0.6, 0.6, 0.6) end
             local best = rows[1]
+            if not ownV and best.p > 0 then ownV = best.p * 0.25 end   -- listed items: drop chance unknown, rough guess
             if best.p <= 0 then
                 add("No price known yet - open the auction house once", 0.6, 0.6, 0.6)
             elseif best.p < 50000 then
@@ -241,6 +265,7 @@ function SFP:GatherLines(kind, id, creatureType, unitLevel)
             add("No drops known for it yet - kill it and loot to learn them", 0.6, 0.6, 0.6)
         end
     end
+    if kind == "n" then table.insert(lines, 1, verdict(ownV, cmpV)) end
     local groups = rankings()
     local group, own, samples
     if kind == "o" then
@@ -260,6 +285,9 @@ function SFP:GatherLines(kind, id, creatureType, unitLevel)
     if best and #list >= 2 then
         local rank
         for i, e in ipairs(list) do if e.kind == kind and e.id == id then rank = i; break end end
+        local vr = own / math.max(best.v, 1)
+        table.insert(lines, 1, { "|cffffd100" .. (kind == "o" and "Worth gathering:" or "Worth skinning:") .. "|r " .. (vr >= 0.85 and "|cff40ff40YES|r" or vr >= 0.5 and "|cffffd040MAYBE|r" or "|cffff6040NO|r") ..
+            " - ~" .. money(own) .. " " .. verb, 0.9, 0.95, 0.8 })
         if best.kind == kind and best.id == id then
             add("Best of the " .. #list .. " " .. GROUP_NAME[group] .. " you know - worth grinding", 0.3, 1, 0.3)
         elseif own >= best.v * 0.8 then
