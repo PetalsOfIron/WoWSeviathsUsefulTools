@@ -1,5 +1,8 @@
 # SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
 
+## 1.47.1-mop
+- The comparison inside a creature type is no longer limited by level: all monsters of the type in the data are compared
+
 ## 1.47.0-mop
 - Tooltip shows only the best monster of the same creature type to grind (name, zone, level, value per kill) or says this one is the best; all monsters of the type in the data are compared, and the level range widens (4, 8, 20 levels, then anywhere) until something is found, so it is never empty
 

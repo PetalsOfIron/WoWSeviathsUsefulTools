@@ -221,7 +221,7 @@ end
 local function sameTypeAdvice(typeName, lvl, ownV, excludeId, add, ownName)
     if not typeName then return false end
     local list, usedRange
-    for _, range in ipairs({ 4, 8, 20, 999 }) do
+    for _, range in ipairs({ 999 }) do   -- every monster of the type, not limited by level
         local byName = {}
         for oid, o in pairs(SFP.db.npcs) do
             local ol = o.lmax or o.lmin
@@ -247,7 +247,7 @@ local function sameTypeAdvice(typeName, lvl, ownV, excludeId, add, ownName)
     table.sort(list, function(a, b) return a.v > b.v end)
     local best = list[1]
     local plural = typeName == "Undead" and typeName or typeName .. "s"
-    local scope = usedRange >= 999 and "anywhere" or ("level " .. ((lvl or 0) - usedRange) .. "-" .. ((lvl or 0) + usedRange))
+    local scope = usedRange >= 999 and "all levels" or ("level " .. ((lvl or 0) - usedRange) .. "-" .. ((lvl or 0) + usedRange))
     if best.v > ownV * 1.15 then
         local where = (best.zone and (best.zone .. ", ") or "") .. (best.lvl and ("lvl " .. best.lvl) or "")
         add("Best " .. typeName:lower() .. " to grind (" .. scope .. "): " .. best.name .. (where ~= "" and (" - " .. where) or "") .. " ~" .. money(best.v) .. " per kill", 1, 0.9, 0.3)
