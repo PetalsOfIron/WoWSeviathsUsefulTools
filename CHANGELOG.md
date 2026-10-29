@@ -1,5 +1,8 @@
 # SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
 
+## 1.32.0-mop
+- Auction House: a yellow chat message when one of your auctions sells (and what the buyer paid when you open the mail); /sfp sold switches it off and on
+
 ## 1.31.0-mop
 - Removed the broken quest parts: map, minimap and zone markers, our tracker and quest log window (Blizzard's are used). Kept: quest objectives in the monster tooltip, quest marks over the heads of monsters and NPCs (from the Questie database), and everything that is not about quests
 

@@ -185,6 +185,8 @@ local function buildSettings(pane)
             function(v) if SFP.QuestMarkers then SFP.QuestMarkers:SetEnabled(v) end end, 260, -40),
         mkCheck(pane, "Quest icons over monster heads", function() return SFP.db.questHeads ~= false end,
             function(v) SFP.db.questHeads = v; if SFP.QuestMarkers then SFP.QuestMarkers:Refresh() end end, 260, -66),
+        mkCheck(pane, "Yellow chat message when an auction sells", function() return SFP.db.auctionSold ~= false end,
+            function(v) SFP.db.auctionSold = v end, 260, -92),
         mkCheck(pane, "Learn farm spots from my loot", function() return SFP.db.learn end, function(v) SFP.db.learn = v end, 12, -66),
         mkCheck(pane, "Show the minimap button", function() return not SFP.db.minimap.hide end,
             function(v) SFP.db.minimap.hide = not v; SFP:RefreshAll() end, 12, -92),

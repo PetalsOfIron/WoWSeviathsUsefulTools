@@ -723,6 +723,8 @@ SlashCmdList["SEVIATHSUSEFULTOOLS"] = function(msg)
         if SFP.QuestMarkers then SFP.QuestMarkers:Debug() end
     elseif cmd == "questcompare" then
         if SFP.QuestMarkers and SFP.QuestMarkers.Compare then SFP.QuestMarkers:Compare() end
+    elseif cmd == "sold" then
+        if SFP.ToggleAuctionSold then SFP:ToggleAuctionSold() end
     elseif cmd == "plates" then
         if SFP.QuestMarkers and SFP.QuestMarkers.PlateDebug then SFP.QuestMarkers:PlateDebug() end
     elseif cmd == "quests" then
