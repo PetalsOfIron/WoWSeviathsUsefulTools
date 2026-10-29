@@ -444,6 +444,9 @@ local function unitTip(tt, data)
     local kind, id = guidInfo(guid)
     if kind ~= "npc" then return dbg("not a monster") end
     if unit and (UnitIsPlayer(unit) or UnitPlayerControlled(unit)) then return dbg("player or pet") end
+    -- friendly NPCs (guards, vendors, auctioneers) are not farm targets: no drop / worth-grinding lines
+    local who = unit or ((UnitGUID("mouseover") == guid) and "mouseover") or ((UnitGUID("target") == guid) and "target")
+    if who and not UnitCanAttack("player", who) then return dbg("friendly") end
     if hasOurLines(tt) then return end
     dbg("npc " .. id)
     local rec = SFP.db.npcs[id]

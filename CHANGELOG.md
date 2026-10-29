@@ -1,5 +1,8 @@
 # SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
 
+## 1.48.1-mop
+- Friendly NPCs (guards, vendors, auctioneers) no longer show drop / "Worth grinding" lines in their tooltip
+
 ## 1.48.0-mop
 - Menu option "Compare monsters: my level and below only" (off = all levels); /sfp comparelevel switches it
 
