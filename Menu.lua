@@ -181,31 +181,15 @@ local function buildSettings(pane)
     mkText(pane, CYHEX .. "Settings|r", 12, -10, 480, "GameFontNormalLarge")
     pane.checks = {
         mkCheck(pane, "Item and monster tooltip lines", function() return SFP.db.tooltip end, function(v) SFP.db.tooltip = v end, 12, -40),
-        mkCheck(pane, "Quest markers on the map and minimap", function() return SFP.db.questMarkers ~= false end,
+        mkCheck(pane, "Quest info on monsters and NPCs (tooltip + head marks)", function() return SFP.db.questMarkers ~= false end,
             function(v) if SFP.QuestMarkers then SFP.QuestMarkers:SetEnabled(v) end end, 260, -40),
-        mkCheck(pane, "Show quests I can pick up (yellow !)", function() return SFP.db.questAvail end,
-            function(v) SFP.db.questAvail = v; if SFP.QuestMarkers then SFP.QuestMarkers:Refresh() end end, 260, -118),
-        mkCheck(pane, "Also show low-level quests", function() return SFP.db.questTrivial end,
-            function(v) SFP.db.questTrivial = v; if SFP.QuestMarkers then SFP.QuestMarkers:Refresh() end end, 260, -66),
         mkCheck(pane, "Quest icons over monster heads", function() return SFP.db.questHeads ~= false end,
-            function(v) SFP.db.questHeads = v; if SFP.QuestMarkers then SFP.QuestMarkers:Refresh() end end, 260, -144),
-        mkCheck(pane, "Tint zones that hold my quests", function() return SFP.db.questZones ~= false end,
-            function(v) SFP.db.questZones = v; if SFP.RefreshWorldMap then SFP.RefreshWorldMap() end end, 260, -170),
-        mkCheck(pane, "Quest tracker (movable)", function() return SFP.db.questTracker ~= false end,
-            function(v) if SFP.QuestUI then SFP.QuestUI:Command(v and "on" or "off") end end, 260, -196),
-        mkCheck(pane, "Quest log window on the L key", function() return SFP.db.questLogReplace ~= false end,
-            function(v) SFP.db.questLogReplace = v end, 260, -222),
-        mkCheck(pane, "Quest markers on the minimap", function() return SFP.db.questMinimap ~= false end,
-            function(v) SFP.db.questMinimap = v; if SFP.QuestMarkers then SFP.QuestMarkers:Refresh() end end, 260, -92),
+            function(v) SFP.db.questHeads = v; if SFP.QuestMarkers then SFP.QuestMarkers:Refresh() end end, 260, -66),
         mkCheck(pane, "Learn farm spots from my loot", function() return SFP.db.learn end, function(v) SFP.db.learn = v end, 12, -66),
         mkCheck(pane, "Show the minimap button", function() return not SFP.db.minimap.hide end,
             function(v) SFP.db.minimap.hide = not v; SFP:RefreshAll() end, 12, -92),
         mkCheck(pane, "Minimap button glows in farm zones", function() return SFP.db.minimapGlow end, function(v) SFP.db.minimapGlow = v; SFP:RefreshAll() end, 12, -118),
     }
-    mkButton(pane, "Use Questie's icons instead", 200, function()
-        if SFP.QuestMarkers then SFP.QuestMarkers:SetEnabled(false) end
-        SFP:QuestieOwnIcons()
-    end, "Turns this addon's quest markers off and Questie's own icons on"):SetPoint("TOPLEFT", 190, -160)
     mkButton(pane, "Show internal errors", 160, function() SFP:Print("see /sfp errors"); SFP:RunModule("SEVIATHSUSEFULTOOLS", "errors") end):SetPoint("TOPLEFT", 12, -160)
     mkButton(pane, "Reload UI", 160, function() ReloadUI() end):SetPoint("TOPLEFT", 12, -190)
     mkButton(pane, "About / options page", 160, function() SFP:OpenAbout() end):SetPoint("TOPLEFT", 12, -220)

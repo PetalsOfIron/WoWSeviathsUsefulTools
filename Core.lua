@@ -719,32 +719,17 @@ SlashCmdList["SEVIATHSUSEFULTOOLS"] = function(msg)
             local pct, mats = SFP:ScanProgress()
             SFP:Print(("Item scan: %d%% of the item IDs asked, %d crafting materials known."):format(pct, mats))
         end
-    elseif cmd == "log" then
-        if SFP.QuestUI then SFP.QuestUI:ToggleLog() end
-    elseif cmd == "tracker" then
-        if SFP.QuestUI then SFP.QuestUI:Command(rest) end
     elseif cmd == "questdebug" then
         if SFP.QuestMarkers then SFP.QuestMarkers:Debug() end
     elseif cmd == "questcompare" then
         if SFP.QuestMarkers and SFP.QuestMarkers.Compare then SFP.QuestMarkers:Compare() end
     elseif cmd == "plates" then
         if SFP.QuestMarkers and SFP.QuestMarkers.PlateDebug then SFP.QuestMarkers:PlateDebug() end
-    elseif cmd == "questscale" then
-        local v = tonumber(rest)
-        if v then
-            SFP.db.questIconScale = math.max(0.3, math.min(2, v))
-            if SFP.QuestMarkers then SFP.QuestMarkers:Refresh() end
-            SFP:Print("Quest icon size " .. SFP.db.questIconScale .. " (default 0.7)")
-        else
-            SFP:Print("/sfp questscale 0.7   - size of the quest icons on the map and minimap")
-        end
     elseif cmd == "quests" then
         if SFP.QuestMarkers then
             SFP.QuestMarkers:SetEnabled(not (SFP.db.questMarkers ~= false))
             SFP:Print("Quest markers " .. (SFP.db.questMarkers and "ON" or "OFF"))
         end
-    elseif cmd == "questie" then
-        if SFP.QuestieOwnIcons then SFP:QuestieOwnIcons() end
     elseif cmd == "tipdebug" then
         SFP.tipDebug = not SFP.tipDebug
         SFP:Print("Tooltip debug " .. (SFP.tipDebug and "ON - hover a monster" or "OFF"))

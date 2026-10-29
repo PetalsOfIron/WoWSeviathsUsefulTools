@@ -1,5 +1,8 @@
 # SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
 
+## 1.31.0-mop
+- Removed the broken quest parts: map, minimap and zone markers, our tracker and quest log window (Blizzard's are used). Kept: quest objectives in the monster tooltip, quest marks over the heads of monsters and NPCs (from the Questie database), and everything that is not about quests
+
 ## 1.30.1-mop
 - Positions for the quest givers and hand-in NPCs the database had no position for
 

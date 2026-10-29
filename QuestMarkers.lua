@@ -249,6 +249,7 @@ local function addIdx(idx, area, qid, ent, kind)
 end
 
 local function buildIndex()
+    do return end   -- the map / minimap markers are gone: no start / finish index needed
     if indexed or indexing then return end
     local QD, N, _, O = dbs()
     if not (QD and N and QD.GetAllIds) then return end
@@ -841,6 +842,7 @@ function Q:DrawContinent(mapID, w, h)
 end
 
 function Q:DrawWorldMap()
+    do return end   -- world map markers removed
     if not layer then return end
     for i = 1, #wpool do wpool[i]:Hide() end
     wused = 0
@@ -921,6 +923,7 @@ local function mclear()
 end
 
 local function mupdate()
+    do return end   -- minimap markers removed
     local h = getHBD()
     if not h or not Q.enabled or not SFP.db.questMinimap then mclear(); return end
     local mapID = C_Map.GetBestMapForUnit("player")
@@ -1212,6 +1215,7 @@ end
 
 -- called from the world map overlay: tints every zone under the shown map that holds quest work
 function Q:DrawZones(mapID)
+    do return end   -- zone tint removed
     if not (Q.enabled and SFP.db.questZones ~= false and SFP.DrawZoneFill and SFP.IsUnderMap) then return end
     local sets = questZones()
     local info = C_Map.GetMapInfo(mapID)
@@ -1243,9 +1247,6 @@ function Q:Refresh()
         SFP:Safe("quest state", refreshState)
         SFP:Safe("quest sets", rebuildSets)
         SFP:Safe("quest heads", function() Q:UpdatePlates() end)
-        if SFP.RefreshWorldMap then SFP:Safe("quest zones", SFP.RefreshWorldMap) end
-        SFP:Safe("quest world map", function() Q:DrawWorldMap() end)
-        SFP:Safe("quest minimap", mupdate)
     end)
 end
 
@@ -1375,14 +1376,9 @@ SFP:OnLogin(function()
         acc = acc + dt
         if acc < 1 then return end
         acc = 0
-        if Q.enabled then SFP:Safe("quest minimap", mupdate) end
     end)
 
     if Q.enabled then
         C_Timer.After(10, function() buildIndex() end)
-        if not SFP.db.questieIconsOffDone then
-            SFP.db.questieIconsOffDone = true
-            C_Timer.After(14, function() SFP:QuestieIconsOff(false) end)
-        end
     end
 end)
