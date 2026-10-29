@@ -76,6 +76,53 @@ local function rankings()
     return groups
 end
 
+-- what the monsters of a creature type usually drop in this zone, from the zone's farm items (Data/Expansions)
+-- group of items per creature type, and a typical drop rate per kill (an estimate, not a measurement)
+local TYPE_GROUP = { Humanoid = "cloth", Undead = "cloth", Beast = "leather", Dragonkin = "leather", Elemental = "element" }
+local GROUP_LABEL = { cloth = "cloth", leather = "leather / scales", element = "elemental motes" }
+local GROUP_RATE = { cloth = 0.5, leather = 0.9, element = 0.4 }
+local GROUP_OWNER = { cloth = "humanoids and undead", leather = "beasts and dragonkin", element = "elementals" }
+
+local function zoneGroups()
+    local zone = SFP.PlayerFarmZone and SFP:PlayerFarmZone()
+    local z = zone and SFP.zoneByMap and SFP.zoneByMap[zone]
+    if not (z and z.items) then return nil end
+    local out = {}
+    for id in pairs(z.items) do
+        local info = SFP.Items[id]
+        local g = info and (info.kind == "meat" and "leather" or info.kind)
+        if g and GROUP_RATE[g] then
+            SFP.trackedIDs[id] = true
+            local p = price(id)
+            if p > 0 and (not out[g] or p > out[g].p) then out[g] = { id = id, p = p } end
+        end
+    end
+    return out
+end
+
+local function typicalLines(typeName, add)
+    local g = typeName and TYPE_GROUP[typeName]
+    local groups = zoneGroups()
+    if not (g and groups) then return false end
+    local mine = groups[g]
+    if not mine then return false end
+    local value = mine.p * GROUP_RATE[g]
+    add("|cffffd100Typical drop here|r  " .. SFP:ItemName(mine.id) .. " " .. money(mine.p) .. "  =>  ~" .. money(value) .. " per kill  |cff808080(estimate)|r")
+    local bestG, bestV
+    for k, e in pairs(groups) do
+        local v = e.p * GROUP_RATE[k]
+        if not bestV or v > bestV then bestG, bestV = k, v end
+    end
+    if bestG == g then
+        add("Best mob drop of this zone: worth grinding " .. GROUP_OWNER[g], 0.3, 1, 0.3)
+    elseif value >= bestV * 0.6 then
+        add("Fine - close to the best (" .. GROUP_OWNER[bestG] .. ", ~" .. money(bestV) .. " per kill)", 0.3, 1, 0.3)
+    else
+        add("Better here: " .. GROUP_OWNER[bestG] .. " (~" .. money(bestV) .. " per kill)", 1, 0.9, 0.3)
+    end
+    return true
+end
+
 -- items the addon lists for a monster (farm data and the quest database), with auction house prices
 local function listedDrops(npcID)
     local set, list = {}, {}
@@ -95,7 +142,7 @@ local function listedDrops(npcID)
 end
 
 -- lines for the tooltip of a monster (kind "n") or a gathering node (kind "o")
-function SFP:GatherLines(kind, id)
+function SFP:GatherLines(kind, id, creatureType)
     local rec = (kind == "o" and self.db.objects or self.db.npcs)[id]
     if not rec then
         if kind ~= "n" then return nil end
@@ -140,6 +187,7 @@ function SFP:GatherLines(kind, id)
     local learnedLoot = kind == "n" and rec.d and next(rec.d) and (rec.k or 0) >= 1
     if kind == "n" and not learnedLoot then
         local rows = listedDrops(id)
+        local typical = typicalLines(creatureType or rec.t, add)
         if #rows > 0 then
             local total = 0
             for _, r in ipairs(rows) do total = total + r.p end
@@ -157,7 +205,7 @@ function SFP:GatherLines(kind, id)
             else
                 add("Best drop " .. SFP:ItemName(best.id) .. " sells for " .. money(best.p) .. " - worth a look", 0.3, 1, 0.3)
             end
-        else
+        elseif not typical then
             add("No drops known for it yet - kill it and loot to learn them", 0.6, 0.6, 0.6)
         end
     end

@@ -1,5 +1,8 @@
 # SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
 
+## 1.42.0-mop
+- Humanoids, undead, beasts, dragonkin and elementals show what that creature type usually drops in the zone (cloth, leather, motes) at auction prices, an estimated value per kill, and which kind of monster is best to grind here
+
 ## 1.41.0-mop
 - Monster tooltip shows value from the first sight: the items the addon lists for the monster (farm data + quest database) at auction house prices, before anything is learned; the learned loot takes over after you kill it
 
