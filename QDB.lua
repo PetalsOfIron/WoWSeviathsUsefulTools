@@ -207,6 +207,42 @@ extraOf = function(kind, id)
     xCache[kind][id] = c
     return c
 end
+-- places where you really were (killed / looted / gathered it): they correct the database points next to them and add new ones
+local function learnedPoints(kind, id)
+    local list = {}
+    local db = SFP.db
+    if not db then return list end
+    local rec = (kind == "n" and db.npcs or db.objects or {})[id]
+    for map, pts in pairs(rec and rec.m or {}) do
+        for _, p in ipairs(pts) do list[#list + 1] = { map, p[1], p[2] } end
+    end
+    if kind == "n" then
+        for _, q in ipairs(db.npcSpots and db.npcSpots[id] or {}) do list[#list + 1] = q end
+    end
+    return list
+end
+
+local function correctWith(sp, learned)
+    if #learned == 0 or not QD.mapToArea then return sp end
+    local out, added = {}, false
+    for area, pts in pairs(sp or {}) do out[area] = { unpack(pts) } end
+    for _, q in ipairs(learned) do
+        local area = QD.mapToArea[q[1]]
+        if area then
+            local qx, qy = q[2] * 100, q[3] * 100
+            local pts = out[area]
+            if not pts then pts = {}; out[area] = pts end
+            local replaced = false
+            for i, p in ipairs(pts) do
+                if (p[1] - qx) ^ 2 + (p[2] - qy) ^ 2 < 5 ^ 2 then pts[i] = { qx, qy }; replaced = true; break end
+            end
+            if not replaced then pts[#pts + 1] = { qx, qy } end
+            added = true
+        end
+    end
+    return added and out or sp
+end
+
 function Npc.spawns(id)
     -- the spot where you actually talked to this NPC beats the database (see QuestMarkers: learned positions)
     local learned = SFP.db and SFP.db.npcPos and SFP.db.npcPos[id]
@@ -214,9 +250,11 @@ function Npc.spawns(id)
         return { [QD.mapToArea[learned[1]]] = { { learned[2] * 100, learned[3] * 100 } } }
     end
     local sp = spawnsOf("n", id, 7)
-    if sp then return sp end
-    local x = extraOf("n", id)
-    return x and x.spawns or nil
+    if not sp then
+        local x = extraOf("n", id)
+        sp = x and x.spawns or nil
+    end
+    return correctWith(sp, learnedPoints("n", id))
 end
 
 local startsBy, endsBy
@@ -246,9 +284,11 @@ function Object.GetAllIds() return ids(QD.o) end
 function Object.name(id) local r = rec("o", id); if r then return r[1] end local x = extraOf("o", id); return x and x.name ~= "" and x.name or nil end
 function Object.spawns(id)
     local sp = spawnsOf("o", id, 2)
-    if sp then return sp end
-    local x = extraOf("o", id)
-    return x and x.spawns or nil
+    if not sp then
+        local x = extraOf("o", id)
+        sp = x and x.spawns or nil
+    end
+    return correctWith(sp, learnedPoints("o", id))
 end
 
 local Item = {}

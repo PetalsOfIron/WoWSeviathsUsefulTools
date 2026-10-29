@@ -1099,12 +1099,36 @@ end
 local function onKill(guid, name)
     local t, _, _, _, _, id = strsplit("-", guid or "")
     if t ~= "Creature" then return end
-    local qids = killQuests[tonumber(id)]
+    id = tonumber(id)
+    local qids = killQuests[id]
     if not qids then
         local _, byName = nameQuests(name)
         qids = byName
     end
-    if qids then rememberSeen(qids) end
+    if qids then
+        rememberSeen(qids)
+        -- the spot of this monster / boss itself, to correct the database position
+        if SFP.db.learnAll ~= false and C_Map and C_Map.GetBestMapForUnit and C_Map.GetPlayerMapPosition then
+            local m = C_Map.GetBestMapForUnit("player")
+            local pos = m and C_Map.GetPlayerMapPosition(m, "player")
+            local x, y
+            if pos then x, y = pos:GetXY() end
+            if x and x > 0 then
+                SFP.db.npcSpots = SFP.db.npcSpots or {}
+                local l = SFP.db.npcSpots[id]
+                if not l then l = {}; SFP.db.npcSpots[id] = l end
+                local dup
+                for _, p in ipairs(l) do
+                    if p[1] == m and (p[2] - x) ^ 2 + (p[3] - y) ^ 2 < 0.006 ^ 2 then dup = true; break end
+                end
+                if not dup and #l < 12 then
+                    l[#l + 1] = { m, x, y }
+                    wipe(cache)
+                    if Q.Refresh then Q:Refresh() end
+                end
+            end
+        end
+    end
 end
 
 function Q:SeenMonster(unit)

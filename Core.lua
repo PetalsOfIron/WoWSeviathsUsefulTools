@@ -597,7 +597,7 @@ events:SetScript("OnEvent", function(_, event, arg1)
                     elseif type(dst[k]) == "table" and type(v) == "table" and depth < 4 then fill(dst[k], v, depth + 1) end
                 end
             end
-            for _, key in ipairs({ "npcs", "knownItems", "objects", "recipes", "learned", "npcPos", "questSeen" }) do
+            for _, key in ipairs({ "npcs", "knownItems", "objects", "recipes", "learned", "npcPos", "questSeen", "npcSpots" }) do
                 if type(seed[key]) == "table" then
                     SFP.db[key] = SFP.db[key] or {}
                     fill(SFP.db[key], seed[key], 1)

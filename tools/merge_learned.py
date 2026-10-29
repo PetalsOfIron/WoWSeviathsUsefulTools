@@ -7,7 +7,7 @@ from lupa import LuaRuntime
 
 SP = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(SP, "..", "Data", "Learned.lua")
-KEYS = ["npcs", "knownItems", "objects", "recipes", "learned", "npcPos", "questSeen"]
+KEYS = ["npcs", "knownItems", "objects", "recipes", "learned", "npcPos", "questSeen", "npcSpots"]
 acc = sys.argv[1] if len(sys.argv) > 1 else os.path.join(SP, "..", "..", "..", "..", "WTF", "Account")
 
 lua = LuaRuntime(unpack_returned_tuples=True)

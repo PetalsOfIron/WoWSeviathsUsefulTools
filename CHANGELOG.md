@@ -1,5 +1,8 @@
 # SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
 
+## 1.38.1-mop
+- Boss / monster / object positions get corrected by what you really do: places where you kill, loot or gather a quest target replace the database point next to them (within 5% of the map) and add new ones; quest areas on the minimap use the corrected positions
+
 ## 1.38.0-mop
 - Quest areas follow what really happens: when you kill a monster (boss) a quest wants, or an objective of a quest moves forward, that place is remembered and drawn as a quest area on the minimap, even when the database lists it somewhere else
 
