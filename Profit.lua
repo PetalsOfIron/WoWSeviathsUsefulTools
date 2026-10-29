@@ -141,8 +141,81 @@ local function listedDrops(npcID)
     return rows
 end
 
+-- every monster the addon has drop data for (Data/Materials: item -> monsters with drop chance), valued at auction prices
+local nameLevel, nameLevelState = {}, 0
+local function ensureNameLevels()
+    if nameLevelState ~= 0 then return end
+    local N = SFP.QDB and SFP.QDB.Npc
+    local ids = N and N.GetAllIds and N.GetAllIds()
+    if not ids then nameLevelState = -1; return end
+    nameLevelState = 1
+    local i, total = 1, #ids
+    local function step()
+        for _ = 1, 500 do
+            local id = ids[i]
+            if not id then break end
+            local nm = N.name(id)
+            if nm and not nameLevel[nm] then
+                local lo, hi = N.minLevel(id), N.maxLevel(id)
+                if lo and lo > 0 then nameLevel[nm] = { lo, hi or lo, N.zoneID(id) } end
+            end
+            i = i + 1
+        end
+        if i <= total then C_Timer.After(0.03, step) else nameLevelState = 2 end
+    end
+    C_Timer.After(3, step)
+end
+
+-- item subtype (Data/Materials "s") dropped by each creature type
+local TYPE_SUBS = { Humanoid = { [5] = true }, Undead = { [5] = true }, Beast = { [8] = true, [6] = true },
+    Dragonkin = { [6] = true }, Elemental = { [10] = true }, Mechanical = { [1] = true, [3] = true } }
+
+local mobCache, mobCacheT
+local function materialMobs()
+    if mobCache and GetTime() - mobCacheT < 30 then return mobCache end
+    local mobs = {}   -- name -> { v = {sub -> value per kill}, zone }
+    for itemID, m in pairs(SFP.MaterialData or {}) do
+        if m.d and m.s and (m.q or 1) >= 0 then
+            local p = price(itemID)
+            if p > 0 then
+                SFP.trackedIDs[itemID] = true
+                for _, e in ipairs(m.d) do
+                    local nm, zone, pct = e[1], e[2], e[3]
+                    if nm and pct and pct > 0 and not nm:find("^%[") then
+                        local t = mobs[nm]
+                        if not t then t = { v = {}, zone = zone }; mobs[nm] = t end
+                        t.v[m.s] = (t.v[m.s] or 0) + p * pct / 100
+                    end
+                end
+            end
+        end
+    end
+    mobCache, mobCacheT = mobs, GetTime()
+    return mobs
+end
+
+local function bestKnownMob(typeName, lvl, excludeName)
+    local subs = TYPE_SUBS[typeName]
+    if not (subs and lvl) then return nil end
+    ensureNameLevels()
+    if nameLevelState ~= 2 then return nil end
+    local best
+    for nm, t in pairs(materialMobs()) do
+        local lv = nameLevel[nm]
+        if lv and nm ~= excludeName and lv[1] <= lvl + 4 and lv[2] >= lvl - 4 then
+            local v = 0
+            for sub in pairs(subs) do v = v + (t.v[sub] or 0) end
+            if v > 0 and (not best or v > best.v) then
+                local map = SFP.QD and SFP.QD.areaToMap and SFP.QD.areaToMap[lv[3] or t.zone]
+                best = { name = nm, v = v, lvl = lv[2], zone = map and SFP:ZoneName(map) or nil }
+            end
+        end
+    end
+    return best
+end
+
 -- other monsters of the SAME creature type (about the same level) that you know are worth more per kill
-local function sameTypeAdvice(typeName, lvl, ownV, excludeId, add)
+local function sameTypeAdvice(typeName, lvl, ownV, excludeId, add, ownName)
     if not typeName then return false end
     local best, count = nil, 0
     for oid, o in pairs(SFP.db.npcs) do
@@ -156,6 +229,9 @@ local function sameTypeAdvice(typeName, lvl, ownV, excludeId, add)
             end
         end
     end
+    -- all monsters of this kind from the addon's drop data, at auction prices
+    local fromData = bestKnownMob(typeName, lvl, ownName)
+    if fromData and (not best or fromData.v > best.v) then best = fromData end
     if not best then
         add("No other " .. typeName:lower() .. " of your level known yet - kill and loot some to compare", 0.6, 0.6, 0.6)
         return true
@@ -185,7 +261,7 @@ local function verdict(own, bestOther)
 end
 
 -- lines for the tooltip of a monster (kind "n") or a gathering node (kind "o")
-function SFP:GatherLines(kind, id, creatureType, unitLevel)
+function SFP:GatherLines(kind, id, creatureType, unitLevel, unitName)
     local rec = (kind == "o" and self.db.objects or self.db.npcs)[id]
     if not rec then
         if kind ~= "n" then return nil end
@@ -204,7 +280,7 @@ function SFP:GatherLines(kind, id, creatureType, unitLevel)
         local lvl = rec.lmax or rec.lmin or unitLevel
         local typeName = creatureType or rec.t
         local sameOk
-        if typeName then sameOk, cmpV = sameTypeAdvice(typeName, lvl, v, id, add) end
+        if typeName then sameOk, cmpV = sameTypeAdvice(typeName, lvl, v, id, add, rec.n) end
         if sameOk then
             -- same creature type compared (humanoid with humanoids, beast with beasts ...)
         elseif lvl then
@@ -240,7 +316,7 @@ function SFP:GatherLines(kind, id, creatureType, unitLevel)
         local typical, tval = typicalLines(creatureType or rec.t, add)
         ownV = tval
         if (creatureType or rec.t) then
-            local _, bv = sameTypeAdvice(creatureType or rec.t, rec.lmax or rec.lmin or unitLevel, tval or 0, id, add)
+            local _, bv = sameTypeAdvice(creatureType or rec.t, rec.lmax or rec.lmin or unitLevel, tval or 0, id, add, rec.n or unitName)
             cmpV = bv
         end
         if #rows > 0 then
@@ -384,6 +460,7 @@ end
 
 SFP:OnLogin(function()
     SFP:Safe("profit track", track)
+    C_Timer.After(8, function() SFP:Safe("monster levels", ensureNameLevels) end)
     if TooltipDataProcessor and Enum.TooltipDataType and Enum.TooltipDataType.Object then
         pcall(TooltipDataProcessor.AddTooltipPostCall, Enum.TooltipDataType.Object, function(tt, data)
             if tt ~= GameTooltip or not SFP.db or not SFP.db.tooltip then return end

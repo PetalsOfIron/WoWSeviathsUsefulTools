@@ -509,7 +509,7 @@ local function unitTip(tt, data)
     end
     local worth = SFP.GatherLines and (function()
         local u = unit or ((guid and UnitGUID("mouseover") == guid) and "mouseover") or "target"
-        return SFP:GatherLines("n", id, UnitCreatureType(u), UnitLevel(u))
+        return SFP:GatherLines("n", id, UnitCreatureType(u), UnitLevel(u), UnitName(u))
     end)()
     if worth then
         for _, l in ipairs(worth) do tt:AddLine(l[1], l[2], l[3], l[4], true) end

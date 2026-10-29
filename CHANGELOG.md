@@ -1,5 +1,8 @@
 # SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
 
+## 1.45.0-mop
+- Comparison inside a creature type now uses every monster the addon has drop data for (Data/Materials drop chances x auction prices, with levels from the quest database): humanoids and undead (cloth), beasts and dragonkin (meat, leather), elementals, mechanicals - at about your level, no need to have killed them first
+
 ## 1.44.0-mop
 - Tooltip: a clear "Worth grinding: YES / MAYBE / NO" line for monsters (and worth gathering / skinning for plants, ore and skins), from the value per kill against the best monster of the same type you know
 
