@@ -1,5 +1,8 @@
 # SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
 
+## 1.48.2-mop
+- Minimap farm spots no longer need HereBeDragons (Questie, RareScanner ...): without it the addon places them itself, following the minimap zoom and rotation
+
 ## 1.48.1-mop
 - Friendly NPCs (guards, vendors, auctioneers) no longer show drop / "Worth grinding" lines in their tooltip
 

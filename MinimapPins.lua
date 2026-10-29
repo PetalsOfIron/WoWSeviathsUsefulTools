@@ -1,10 +1,10 @@
 -- SeviathsUsefulTools - spots on the minimap
 --
 -- The same farm spots, rares, hunter tames, special materials and gathering nodes as on the world
--- map, drawn on the minimap around you. It uses HereBeDragons-Pins (the library Questie, RareScanner
--- and others share), so it follows rotation, zoom and any minimap shape set by Leatrix, BasicMinimap
--- and similar addons. Only the spots near you are drawn.
---
+-- map, drawn on the minimap around you. Only the spots near you are drawn.
+-- With HereBeDragons-Pins (the library Questie, RareScanner and others share) it follows rotation,
+-- zoom and any minimap shape set by Leatrix, BasicMinimap and similar addons. Without it the spots
+-- are placed here, from the map size, the minimap zoom and the minimap rotation.
 -- Also here: one button to make Questie draw its quests on the minimap in Mists of Pandaria.
 
 local ADDON, SFP = ...
@@ -79,13 +79,76 @@ local function release(key)
     shown[key] = nil
 end
 
+---------------------------------------------------------------------------
+-- without HereBeDragons: place the spots on the minimap ourselves
+---------------------------------------------------------------------------
+-- minimap diameter in yards per zoom level (outdoors)
+local OUTDOOR = { [0] = 466 + 2 / 3, 400, 333 + 1 / 3, 266 + 2 / 3, 200, 133 + 1 / 3 }
+
+local mapSize = {}   -- [mapID] = { width yards, height yards } or false
+local function sizeOf(mapID)
+    local s = mapSize[mapID]
+    if s ~= nil then return s end
+    s = false
+    if C_Map.GetWorldPosFromMapPos and CreateVector2D then
+        local _, a = C_Map.GetWorldPosFromMapPos(mapID, CreateVector2D(0, 0))
+        local _, bx = C_Map.GetWorldPosFromMapPos(mapID, CreateVector2D(1, 0))
+        local _, by = C_Map.GetWorldPosFromMapPos(mapID, CreateVector2D(0, 1))
+        if a and bx and by then
+            local w = math.sqrt((bx.x - a.x) ^ 2 + (bx.y - a.y) ^ 2)
+            local h = math.sqrt((by.x - a.x) ^ 2 + (by.y - a.y) ^ 2)
+            if w > 0 and h > 0 then s = { w, h } end
+        end
+    end
+    mapSize[mapID] = s
+    return s
+end
+
+local function viewRadius()
+    if C_Minimap and C_Minimap.GetViewRadius then
+        local r = C_Minimap.GetViewRadius()
+        if type(r) == "number" and r > 0 then return r end
+    end
+    return (OUTDOOR[Minimap:GetZoom() or 0] or OUTDOOR[3]) / 2
+end
+
+-- move every drawn spot to where it belongs around the minimap centre
+local function placeOwn()
+    if getHBD() or not next(shown) then return end
+    local size = currentMap and sizeOf(currentMap)
+    local pos = currentMap and C_Map.GetPlayerMapPosition(currentMap, "player")
+    local px, py
+    if pos and pos.GetXY then px, py = pos:GetXY() end
+    if not size or not px or px <= 0 then
+        for _, f in pairs(shown) do f:Hide() end
+        return
+    end
+    local rotate = (C_CVar and C_CVar.GetCVar or GetCVar)("rotateMinimap") == "1"
+    local face = rotate and GetPlayerFacing() or 0
+    local cs, sn = math.cos(face), math.sin(face)
+    local radius = viewRadius()
+    local scale = (Minimap:GetWidth() / 2) / radius
+    for _, f in pairs(shown) do
+        local ex = (f.px - px) * size[1]     -- yards east
+        local ny = -(f.py - py) * size[2]    -- yards north
+        local x, y = ex * cs + ny * sn, -ex * sn + ny * cs
+        if x * x + y * y > radius * radius * 0.96 then
+            f:Hide()
+        else
+            f:ClearAllPoints()
+            f:SetPoint("CENTER", Minimap, "CENTER", x * scale, y * scale)
+            f:Show()
+        end
+    end
+end
+
 local function clearAll()
     for key in pairs(shown) do release(key) end
 end
 
 local function update()
     local h = getHBD()
-    if not h or not SFP.db or not SFP.db.minimapSpots or not SFP.db.mapOverlay or not SFP.zoneByMap then
+    if not SFP.db or not SFP.db.minimapSpots or not SFP.db.mapOverlay or not SFP.zoneByMap then
         clearAll()
         return
     end
@@ -125,11 +188,20 @@ local function update()
             f.spot, f.px, f.py = s, p[1], p[2]
             f.outer:SetVertexColor(c.r, c.g, c.b, 0.75)
             f.inner:SetVertexColor(1, 1, 1, 0.95)
-            f:Show()
-            local ok = pcall(h.AddMinimapIconMap, h, SFP, f, mapID, p[1], p[2], false, false)
-            if ok then shown[key] = f else f:Hide(); pool[#pool + 1] = f end
+            if h then
+                f:Show()
+                local ok = pcall(h.AddMinimapIconMap, h, SFP, f, mapID, p[1], p[2], false, false)
+                if ok then shown[key] = f else f:Hide(); pool[#pool + 1] = f end
+            elseif sizeOf(mapID) then
+                f:SetParent(Minimap)
+                f:SetFrameLevel(Minimap:GetFrameLevel() + 5)
+                shown[key] = f   -- placeOwn() puts it on the minimap
+            else
+                pool[#pool + 1] = f
+            end
         end
     end
+    if not h then placeOwn() end
 end
 
 local ticker
@@ -143,11 +215,15 @@ SFP:OnLogin(function()
         SFP:Safe("minimap spots", update)
     end)
     SFP:OnRefresh(function() currentMap = nil end)
-    if not getHBD() then
-        C_Timer.After(5, function()
-            if not getHBD() then SFP.minimapSpotsMissingLib = true end
-        end)
-    end
+    -- no HereBeDragons: keep the spots on the move with the player
+    local move = CreateFrame("Frame")
+    local acc2 = 0
+    move:SetScript("OnUpdate", function(_, dt)
+        acc2 = acc2 + dt
+        if acc2 < 0.05 then return end
+        acc2 = 0
+        if next(shown) then SFP:Safe("minimap spots move", placeOwn) end
+    end)
 end)
 
 ---------------------------------------------------------------------------
