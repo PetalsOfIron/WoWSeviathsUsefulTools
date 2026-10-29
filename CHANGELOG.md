@@ -1,5 +1,8 @@
 # SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
 
+## 1.46.0-mop
+- Tooltip lists the creature type around your level as a ranking (humanoids, beasts, undead ...), best first, with zone, level and value per kill at auction prices, and marks the monster you are looking at; one kill no longer counts as a 100% drop
+
 ## 1.45.0-mop
 - Comparison inside a creature type now uses every monster the addon has drop data for (Data/Materials drop chances x auction prices, with levels from the quest database): humanoids and undead (cloth), beasts and dragonkin (meat, leather), elementals, mechanicals - at about your level, no need to have killed them first
 

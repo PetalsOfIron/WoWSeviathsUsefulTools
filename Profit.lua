@@ -30,8 +30,10 @@ end
 local function dropValue(drops, count)
     local v = 0
     if not drops or not count or count <= 0 then return 0 end
+    -- few kills: do not trust "dropped every time" (1 of 1 kills counts as 50%)
+    local n = count < 5 and count + 1 or count
     for id, c in pairs(drops) do
-        v = v + (c / count) * (price(id))
+        v = v + (c / n) * (price(id))
     end
     return v
 end
@@ -194,55 +196,64 @@ local function materialMobs()
     return mobs
 end
 
-local function bestKnownMob(typeName, lvl, excludeName)
+local function knownMobs(typeName, lvl, excludeName)
     local subs = TYPE_SUBS[typeName]
-    if not (subs and lvl) then return nil end
+    local out = {}
+    if not (subs and lvl) then return out end
     ensureNameLevels()
-    if nameLevelState ~= 2 then return nil end
-    local best
+    if nameLevelState ~= 2 then return out end
     for nm, t in pairs(materialMobs()) do
         local lv = nameLevel[nm]
         if lv and nm ~= excludeName and lv[1] <= lvl + 4 and lv[2] >= lvl - 4 then
             local v = 0
             for sub in pairs(subs) do v = v + (t.v[sub] or 0) end
-            if v > 0 and (not best or v > best.v) then
+            if v > 0 then
                 local map = SFP.QD and SFP.QD.areaToMap and SFP.QD.areaToMap[lv[3] or t.zone]
-                best = { name = nm, v = v, lvl = lv[2], zone = map and SFP:ZoneName(map) or nil }
+                out[#out + 1] = { name = nm, v = v, lvl = lv[2], zone = map and SFP:ZoneName(map) or nil }
             end
         end
     end
-    return best
+    return out
 end
 
--- other monsters of the SAME creature type (about the same level) that you know are worth more per kill
+-- all monsters of the SAME creature type around your level (learned loot + the addon's drop data), best first
 local function sameTypeAdvice(typeName, lvl, ownV, excludeId, add, ownName)
     if not typeName then return false end
-    local best, count = nil, 0
+    local byName = {}
     for oid, o in pairs(SFP.db.npcs) do
         local ol = o.lmax or o.lmin
         if oid ~= excludeId and o.t == typeName and o.d and (o.k or 0) >= 1 and (not lvl or not ol or math.abs(ol - lvl) <= 4) then
-            local ov = dropValue(o.d, o.k)
-            count = count + 1
-            if not best or ov > best.v then
-                local map = o.m and next(o.m)
-                best = { name = o.n or ("NPC " .. oid), v = ov, lvl = ol, zone = map and SFP:ZoneName(map) or nil }
-            end
+            local nm = o.n or ("NPC " .. oid)
+            local map = o.m and next(o.m)
+            byName[nm] = { name = nm, v = dropValue(o.d, o.k), lvl = ol, zone = map and SFP:ZoneName(map) or nil, mine = true }
         end
     end
-    -- all monsters of this kind from the addon's drop data, at auction prices
-    local fromData = bestKnownMob(typeName, lvl, ownName)
-    if fromData and (not best or fromData.v > best.v) then best = fromData end
-    if not best then
+    for _, e in ipairs(knownMobs(typeName, lvl, ownName)) do
+        local c = byName[e.name]
+        if not c then byName[e.name] = e
+        elseif e.v > c.v then e.mine = c.mine; byName[e.name] = e end
+    end
+    local list = {}
+    for _, e in pairs(byName) do list[#list + 1] = e end
+    list[#list + 1] = { name = ownName or "this monster", v = ownV, lvl = lvl, self = true }
+    table.sort(list, function(a, b) return a.v > b.v end)
+    local others = #list - 1
+    if others == 0 then
         add("No other " .. typeName:lower() .. " of your level known yet - kill and loot some to compare", 0.6, 0.6, 0.6)
         return true
     end
-    local where = (best.zone and (best.zone .. ", ") or "") .. (best.lvl and ("lvl " .. best.lvl) or "")
-    if best.v > ownV * 1.15 then
-        add("Better " .. typeName:lower() .. ": " .. best.name .. " (" .. where .. ") ~" .. money(best.v) .. " per kill", 1, 0.9, 0.3)
-    else
-        add("Best " .. typeName:lower() .. " you know at this level (next: " .. best.name .. " ~" .. money(best.v) .. ")", 0.3, 1, 0.3)
+    add("|cffffd100" .. (typeName == "Undead" and typeName or typeName .. "s") .. " around level " .. ((lvl or 0) - 4) .. "-" .. ((lvl or 0) + 4) .. "|r (auction prices, " .. others .. " compared):", 0.9, 0.9, 0.9)
+    local shown, topOther = 0, nil
+    for rank, e in ipairs(list) do
+        if not e.self and not topOther then topOther = e.v end
+        if shown < 5 or e.self then
+            shown = shown + 1
+            local where = (e.zone and (e.zone .. ", ") or "") .. (e.lvl and ("lvl " .. e.lvl) or "")
+            local label = rank .. ". " .. e.name .. (e.self and "  |cff40ff40<- this one|r" or "") .. (where ~= "" and ("  |cff808080(" .. where .. ")|r") or "") .. "  ~" .. money(e.v)
+            if e.self then add(label, 0.6, 1, 0.6) else add(label, 0.85, 0.85, 0.85) end
+        end
     end
-    return true, best.v
+    return true, topOther
 end
 
 -- one clear answer: is it worth grinding?
