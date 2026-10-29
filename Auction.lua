@@ -28,7 +28,7 @@ local step  -- forward declared
 local function finishItem()
     if waitTimer then waitTimer:Cancel(); waitTimer = nil end
     waitingFor = nil
-    C_Timer.After(0.05, step)
+    C_Timer.After(0, step)
 end
 
 step = function()
@@ -56,19 +56,67 @@ step = function()
     local sorts = { { sortOrder = Enum.AuctionHouseSortOrder.Price, reverseSort = false } }
     C_AuctionHouse.SendSearchQuery(key, sorts, true)
     -- nothing listed -> no result event; move on after a short wait
-    waitTimer = C_Timer.NewTimer(2.5, finishItem)
+    waitTimer = C_Timer.NewTimer(1.2, finishItem)
     if qIndex % 25 == 0 then
         SFP:Print(string.format("Scanning prices... %d/%d", qIndex, #queue))
         SFP:RefreshAll()
     end
 end
 
-function SFP:StartScan(force)
+-- full scan: the whole auction house in one request (like other addons), instead of one search per item
+local fullWaiting, fullTimer = false, nil
+
+local function processReplicate()
+    local n = C_AuctionHouse.GetNumReplicateItems and C_AuctionHouse.GetNumReplicateItems() or 0
+    local best, i, found = {}, 0, 0
+    local function chunk()
+        local stop = math.min(n, i + 600)
+        while i < stop do
+            local name, _, count, _, _, _, _, _, _, buyout, _, _, _, _, _, _, itemID = C_AuctionHouse.GetReplicateItemInfo(i)
+            i = i + 1
+            if itemID and buyout and buyout > 0 and SFP.trackedIDs[itemID] then
+                local unit = math.floor(buyout / ((count and count > 0) and count or 1))
+                if not best[itemID] or unit < best[itemID] then best[itemID] = unit end
+            end
+        end
+        if i < n then
+            C_Timer.After(0, chunk)
+        else
+            for id, p in pairs(best) do savePrice(id, p); found = found + 1 end
+            scanning = false
+            SFP.db.lastScan = time()
+            SFP:Print(("Full auction scan done: %d auctions read, prices for %d items."):format(n, found))
+            SFP:RefreshAll()
+        end
+    end
+    chunk()
+end
+
+function SFP:TryFullScan()
+    if not (C_AuctionHouse and C_AuctionHouse.ReplicateItems and C_AuctionHouse.GetReplicateItemInfo) then return false end
+    local ok = pcall(C_AuctionHouse.ReplicateItems)
+    if not ok then return false end
+    fullWaiting, scanning = true, true
+    self:Print("Full auction scan started (one request for the whole auction house)...")
+    if fullTimer then fullTimer:Cancel() end
+    fullTimer = C_Timer.NewTimer(25, function()
+        if fullWaiting then
+            -- no answer (scan cooldown?): fall back to searching the items one by one
+            fullWaiting, scanning = false, false
+            SFP:Print("No full scan answer - searching the items one by one.")
+            SFP:StartScan(true, true)
+        end
+    end)
+    return true
+end
+
+function SFP:StartScan(force, noFull)
     if not ahOpen then
         self:Print("Open the auction house first.")
         return
     end
     if scanning then return end
+    if not noFull and self:TryFullScan() then return end
     if not force and qIndex > 0 and qIndex < #queue then
         qIndex = qIndex - 1 -- resume the interrupted scan
     else
@@ -85,6 +133,7 @@ pcall(f.RegisterEvent, f, "AUCTION_HOUSE_CLOSED")
 pcall(f.RegisterEvent, f, "COMMODITY_SEARCH_RESULTS_UPDATED")
 pcall(f.RegisterEvent, f, "ITEM_SEARCH_RESULTS_UPDATED")
 pcall(f.RegisterEvent, f, "AUCTION_HOUSE_THROTTLED_SYSTEM_READY")
+pcall(f.RegisterEvent, f, "REPLICATE_ITEM_LIST_UPDATE")
 f:SetScript("OnEvent", function(_, event, arg1)
     if event == "AUCTION_HOUSE_SHOW" then
         ahOpen = true
@@ -93,6 +142,12 @@ f:SetScript("OnEvent", function(_, event, arg1)
         local resume = qIndex > 0 and qIndex < #queue
         if stale or resume then
             C_Timer.After(1, function() SFP:StartScan(false) end)
+        end
+    elseif event == "REPLICATE_ITEM_LIST_UPDATE" then
+        if fullWaiting then
+            fullWaiting = false
+            if fullTimer then fullTimer:Cancel(); fullTimer = nil end
+            SFP:Safe("full scan", processReplicate)
         end
     elseif event == "AUCTION_HOUSE_CLOSED" then
         ahOpen = false

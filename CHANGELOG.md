@@ -1,5 +1,8 @@
 # SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
 
+## 1.35.0-mop
+- Faster auction scan: the whole auction house is read in one request (like other addons); the item-by-item search is only the fallback and waits less for items that are not listed
+
 ## 1.34.0-mop
 - Hover a plant, ore vein or animal: what one gather / skin / kill is worth at auction prices, and whether a better one is worth grinding instead (compared with the ones you have gathered)
 - Hover a crafted item: materials cost against the selling price (5% cut) = gain or loss; /sfp craft lists your most profitable recipes
