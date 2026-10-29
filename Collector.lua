@@ -403,6 +403,8 @@ function SFP:ItemTipLines(id)
         local src = self:QuestieItemSources(id)
         for _, line in ipairs(src or {}) do lines[#lines + 1] = { line, 0.7, 0.7, 0.7, true } end
     end
+    local craft = SFP.CraftProfitLines and SFP:CraftProfitLines(id)
+    for _, l in ipairs(craft or {}) do lines[#lines + 1] = l end
     return lines
 end
 
@@ -504,6 +506,10 @@ local function unitTip(tt, data)
             end
             if #names > 0 then tt:AddLine("Starts: " .. table.concat(names, ", "), 0.6, 1, 0.6, true) end
         end
+    end
+    local worth = SFP.GatherLines and SFP:GatherLines("n", id)
+    if worth then
+        for _, l in ipairs(worth) do tt:AddLine(l[1], l[2], l[3], l[4], true) end
     end
     local objq = SFP.QuestObjectiveNpc and SFP:QuestObjectiveNpc(id)
     if objq then

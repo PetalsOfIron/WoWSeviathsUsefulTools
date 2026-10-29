@@ -1,5 +1,10 @@
 # SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
 
+## 1.34.0-mop
+- Hover a plant, ore vein or animal: what one gather / skin / kill is worth at auction prices, and whether a better one is worth grinding instead (compared with the ones you have gathered)
+- Hover a crafted item: materials cost against the selling price (5% cut) = gain or loss; /sfp craft lists your most profitable recipes
+- The auction scan now also covers gathering drops and recipe materials
+
 ## 1.33.0-mop
 - Chat message (yellow) with the gold you take from the mailbox and the gold you get from selling to a vendor; /sfp income switches it off and on
 
