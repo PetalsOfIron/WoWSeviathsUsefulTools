@@ -1036,6 +1036,13 @@ local function onUpdate(self, elapsed)
         return
     end
 
+    -- a quest (or any other map pin) under the cursor comes first: its own tooltip is shown, not ours
+    local focus = (GetMouseFoci and GetMouseFoci()[1]) or (GetMouseFocus and GetMouseFocus())
+    if focus and (focus.questID or focus.pinTemplate or focus.owningMap or focus.poiInfo) then
+        if lastSpot or lastHover then tip:Hide(); lastSpot, lastHover = nil, nil end
+        return
+    end
+
     -- nearest glowing spot under the cursor (frames don't take the mouse)
     local x, y = WorldMapFrame:GetNormalizedCursorPosition()
     if not x then return end

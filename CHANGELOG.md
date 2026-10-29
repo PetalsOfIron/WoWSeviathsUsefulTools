@@ -1,5 +1,8 @@
 # SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
 
+## 1.39.0-mop
+- World map: when the cursor is on a quest (or any other map pin) the quest tooltip comes first; the farm / rare / monster spot tooltip is not drawn on top of it
+
 ## 1.38.1-mop
 - Boss / monster / object positions get corrected by what you really do: places where you kill, loot or gather a quest target replace the database point next to them (within 5% of the map) and add new ones; quest areas on the minimap use the corrected positions
 
