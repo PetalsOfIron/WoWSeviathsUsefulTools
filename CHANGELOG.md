@@ -1,5 +1,8 @@
 # SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
 
+## 1.33.0-mop
+- Chat message (yellow) with the gold you take from the mailbox and the gold you get from selling to a vendor; /sfp income switches it off and on
+
 ## 1.32.0-mop
 - Auction House: a yellow chat message when one of your auctions sells (and what the buyer paid when you open the mail); /sfp sold switches it off and on
 
