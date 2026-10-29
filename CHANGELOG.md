@@ -1,5 +1,8 @@
 # SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
 
+## 1.38.0-mop
+- Quest areas follow what really happens: when you kill a monster (boss) a quest wants, or an objective of a quest moves forward, that place is remembered and drawn as a quest area on the minimap, even when the database lists it somewhere else
+
 ## 1.37.1-mop
 - Menu: settings no longer overlap (two checkboxes sat on top of each other, so one could not be clicked); labels are clickable; switching quest info off also removes the head marks and the "Starts:" tooltip line
 

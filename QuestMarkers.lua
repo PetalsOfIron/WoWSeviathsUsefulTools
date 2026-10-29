@@ -973,11 +973,12 @@ end
 -- icons over the heads of quest monsters (nameplates)
 ---------------------------------------------------------------------------
 local finishSet, objSet = {}, {}
+local killQuests = {}     -- npcID -> { quest ids that want a kill of it }
 local textQuests = {}      -- quests matched by monster names in their text
 local plateIcons = {}     -- unit token -> icon frame
 
 rebuildSets = function()
-    wipe(finishSet); wipe(objSet); wipe(textQuests)
+    wipe(finishSet); wipe(objSet); wipe(textQuests); wipe(killQuests)
     local QD = dbs()
     if not QD then return end
     for qid in pairs(state.complete) do
@@ -987,7 +988,14 @@ rebuildSets = function()
     for qid in pairs(state.inLog) do
         if not state.complete[qid] then
             local tg = targetsOf(qid)
-            for _, t in ipairs(tg) do if t.kind == 1 then objSet[t.ent] = true end end
+            for _, t in ipairs(tg) do
+                if t.kind == 1 then
+                    objSet[t.ent] = true
+                    local l = killQuests[t.ent]
+                    if not l then l = {}; killQuests[t.ent] = l end
+                    l[#l + 1] = qid
+                end
+            end
             local hasKill = false
             for _, t in ipairs(tg) do if t.kind == 1 then hasKill = true; break end end
             if not hasKill then
@@ -1071,6 +1079,33 @@ local function learnNpc()
     if Q.Refresh then Q:Refresh() end
 end
 function Q:LearnNpc() learnNpc() end
+
+-- an objective of a quest moved forward (kill, item, object): that is where it happens, wherever the database says
+local progress = {}
+local function checkProgress()
+    for qid in pairs(state.inLog) do
+        if not state.complete[qid] then
+            local sum = 0
+            for _, o in ipairs(blizzObjectives(qid)) do sum = sum + (o.numFulfilled or 0) end
+            if progress[qid] and sum > progress[qid] then rememberSeen({ qid }) end
+            progress[qid] = sum
+        else
+            progress[qid] = nil
+        end
+    end
+end
+
+-- you killed a monster that one of your quests wants (a boss in another place than the database says, ...)
+local function onKill(guid, name)
+    local t, _, _, _, _, id = strsplit("-", guid or "")
+    if t ~= "Creature" then return end
+    local qids = killQuests[tonumber(id)]
+    if not qids then
+        local _, byName = nameQuests(name)
+        qids = byName
+    end
+    if qids then rememberSeen(qids) end
+end
 
 function Q:SeenMonster(unit)
     if not (Q.enabled and unit and UnitExists(unit) and not UnitIsPlayer(unit)) then return end
@@ -1248,6 +1283,7 @@ function Q:Refresh()
         end
         SFP:Safe("quest state", refreshState)
         SFP:Safe("quest sets", rebuildSets)
+        SFP:Safe("quest progress", checkProgress)
         SFP:Safe("quest heads", function() Q:UpdatePlates() end)
         SFP:Safe("quest minimap", mupdate)
     end)
@@ -1345,6 +1381,7 @@ SFP:OnLogin(function()
     pcall(pev.RegisterEvent, pev, "NAME_PLATE_UNIT_ADDED")
     pcall(pev.RegisterEvent, pev, "NAME_PLATE_UNIT_REMOVED")
     pcall(pev.RegisterEvent, pev, "UPDATE_MOUSEOVER_UNIT")
+    pcall(pev.RegisterEvent, pev, "COMBAT_LOG_EVENT_UNFILTERED")
     for _, e in ipairs({ "GOSSIP_SHOW", "QUEST_GREETING", "QUEST_DETAIL", "QUEST_PROGRESS", "QUEST_COMPLETE" }) do
         pcall(pev.RegisterEvent, pev, e)
     end
@@ -1352,6 +1389,12 @@ SFP:OnLogin(function()
     pev:SetScript("OnEvent", function(_, event, unit)
         if event == "GOSSIP_SHOW" or event == "QUEST_GREETING" or event == "QUEST_DETAIL" or event == "QUEST_PROGRESS" or event == "QUEST_COMPLETE" then
             return SFP:Safe("learn npc", learnNpc)
+        end
+        if event == "COMBAT_LOG_EVENT_UNFILTERED" then
+            if not (Q.enabled and CombatLogGetCurrentEventInfo) then return end
+            local _, sub, _, srcGUID, _, _, _, destGUID, destName = CombatLogGetCurrentEventInfo()
+            if sub == "PARTY_KILL" and srcGUID == UnitGUID("player") then SFP:Safe("kill learn", onKill, destGUID, destName) end
+            return
         end
         if event == "UPDATE_MOUSEOVER_UNIT" then return SFP:Safe("seen mouseover", function() Q:SeenMonster("mouseover") end) end
         if event == "PLAYER_TARGET_CHANGED" then return SFP:Safe("seen target", function() Q:SeenMonster("target") end) end
