@@ -1283,6 +1283,7 @@ function Q:SetEnabled(on)
         Q:Refresh()
     else
         Q:DrawWorldMap(); mclear()
+        for _, f in pairs(plateIcons) do f:Hide() end
     end
 end
 

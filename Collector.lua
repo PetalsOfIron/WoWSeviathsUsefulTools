@@ -493,7 +493,7 @@ local function unitTip(tt, data)
     end
     -- quests it gives or takes (Questie database)
     local Q, N = SFP.QDB and SFP.QDB.Quest, SFP.QDB and SFP.QDB.Npc
-    if Q and N then
+    if Q and N and not (SFP.QuestMarkers and SFP.QuestMarkers.enabled == false) then
         local ok, starts = pcall(N.questStarts, id)
         if ok and starts and #starts > 0 then
             local names = {}

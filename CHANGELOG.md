@@ -1,5 +1,8 @@
 # SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
 
+## 1.37.1-mop
+- Menu: settings no longer overlap (two checkboxes sat on top of each other, so one could not be clicked); labels are clickable; switching quest info off also removes the head marks and the "Starts:" tooltip line
+
 ## 1.37.0-mop
 - Option "Learn everything constantly" (menu, /sfp learnall): monsters, drops, items, nodes, recipes, quest giver positions and quest monster places are recorded all the time
 - tools/watch_learned.py (start_watch_learned.bat): keeps Data/Learned.lua in the addon folder up to date whenever the game saves (/reload or logout)

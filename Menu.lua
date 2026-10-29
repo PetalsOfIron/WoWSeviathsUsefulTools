@@ -61,6 +61,7 @@ local function mkCheck(parent, label, getter, setter, x, y)
     local t = cb:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     t:SetPoint("LEFT", cb, "RIGHT", 2, 0)
     t:SetText(label)
+    cb:SetHitRectInsets(0, -(t:GetStringWidth() + 6), 0, 0)   -- the label can be clicked too
     cb:SetScript("OnClick", function(self) setter(self:GetChecked() and true or false) end)
     cb.refresh = function() cb:SetChecked(getter() and true or false) end
     return cb
@@ -180,27 +181,29 @@ end
 local function buildSettings(pane)
     mkText(pane, CYHEX .. "Settings|r", 12, -10, 480, "GameFontNormalLarge")
     pane.checks = {
+        -- left column
         mkCheck(pane, "Item and monster tooltip lines", function() return SFP.db.tooltip end, function(v) SFP.db.tooltip = v end, 12, -40),
-        mkCheck(pane, "Quest info on monsters and NPCs (tooltip + head marks)", function() return SFP.db.questMarkers ~= false end,
+        mkCheck(pane, "Learn farm spots from my loot", function() return SFP.db.learn end, function(v) SFP.db.learn = v end, 12, -66),
+        mkCheck(pane, "Learn everything constantly", function() return SFP.db.learnAll ~= false end,
+            function(v) SFP.db.learnAll = v end, 12, -92),
+        mkCheck(pane, "Show the minimap button", function() return not SFP.db.minimap.hide end,
+            function(v) SFP.db.minimap.hide = not v; SFP:RefreshAll() end, 12, -118),
+        mkCheck(pane, "Minimap button glows in farm zones", function() return SFP.db.minimapGlow end, function(v) SFP.db.minimapGlow = v; SFP:RefreshAll() end, 12, -144),
+        -- right column
+        mkCheck(pane, "Quest info on monsters and NPCs", function() return SFP.db.questMarkers ~= false end,
             function(v) if SFP.QuestMarkers then SFP.QuestMarkers:SetEnabled(v) end end, 260, -40),
-        mkCheck(pane, "Quest areas on the minimap", function() return SFP.db.questMinimap ~= false end,
-            function(v) SFP.db.questMinimap = v; if SFP.QuestMarkers then SFP.QuestMarkers:Refresh() end end, 260, -92),
         mkCheck(pane, "Quest icons over monster heads", function() return SFP.db.questHeads ~= false end,
             function(v) SFP.db.questHeads = v; if SFP.QuestMarkers then SFP.QuestMarkers:Refresh() end end, 260, -66),
-        mkCheck(pane, "Yellow chat message when an auction sells", function() return SFP.db.auctionSold ~= false end,
-            function(v) SFP.db.auctionSold = v end, 260, -92),
-        mkCheck(pane, "Chat message for gold from the mailbox / vendor", function() return SFP.db.incomeMessages ~= false end,
-            function(v) SFP.db.incomeMessages = v end, 260, -118),
-        mkCheck(pane, "Learn everything constantly (monsters, items, quests, positions)", function() return SFP.db.learnAll ~= false end,
-            function(v) SFP.db.learnAll = v end, 12, -144),
-        mkCheck(pane, "Learn farm spots from my loot", function() return SFP.db.learn end, function(v) SFP.db.learn = v end, 12, -66),
-        mkCheck(pane, "Show the minimap button", function() return not SFP.db.minimap.hide end,
-            function(v) SFP.db.minimap.hide = not v; SFP:RefreshAll() end, 12, -92),
-        mkCheck(pane, "Minimap button glows in farm zones", function() return SFP.db.minimapGlow end, function(v) SFP.db.minimapGlow = v; SFP:RefreshAll() end, 12, -118),
+        mkCheck(pane, "Quest areas on the minimap", function() return SFP.db.questMinimap ~= false end,
+            function(v) SFP.db.questMinimap = v; if SFP.QuestMarkers then SFP.QuestMarkers:Refresh() end end, 260, -92),
+        mkCheck(pane, "Chat message when an auction sells", function() return SFP.db.auctionSold ~= false end,
+            function(v) SFP.db.auctionSold = v end, 260, -118),
+        mkCheck(pane, "Chat message: mailbox / vendor gold", function() return SFP.db.incomeMessages ~= false end,
+            function(v) SFP.db.incomeMessages = v end, 260, -144),
     }
-    mkButton(pane, "Show internal errors", 160, function() SFP:Print("see /sfp errors"); SFP:RunModule("SEVIATHSUSEFULTOOLS", "errors") end):SetPoint("TOPLEFT", 12, -160)
-    mkButton(pane, "Reload UI", 160, function() ReloadUI() end):SetPoint("TOPLEFT", 12, -190)
-    mkButton(pane, "About / options page", 160, function() SFP:OpenAbout() end):SetPoint("TOPLEFT", 12, -220)
+    mkButton(pane, "Show internal errors", 160, function() SFP:Print("see /sfp errors"); SFP:RunModule("SEVIATHSUSEFULTOOLS", "errors") end):SetPoint("TOPLEFT", 12, -185)
+    mkButton(pane, "Reload UI", 160, function() ReloadUI() end):SetPoint("TOPLEFT", 12, -215)
+    mkButton(pane, "About / options page", 160, function() SFP:OpenAbout() end):SetPoint("TOPLEFT", 12, -245)
     pane.refresh = function() for _, cb in ipairs(pane.checks) do cb.refresh() end end
 end
 
