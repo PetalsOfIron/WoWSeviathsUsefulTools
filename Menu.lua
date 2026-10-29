@@ -189,6 +189,8 @@ local function buildSettings(pane)
         mkCheck(pane, "Show the minimap button", function() return not SFP.db.minimap.hide end,
             function(v) SFP.db.minimap.hide = not v; SFP:RefreshAll() end, 12, -118),
         mkCheck(pane, "Minimap button glows in farm zones", function() return SFP.db.minimapGlow end, function(v) SFP.db.minimapGlow = v; SFP:RefreshAll() end, 12, -144),
+        mkCheck(pane, "Compare monsters: my level and below only", function() return SFP.db.compareMineOnly end,
+            function(v) SFP.db.compareMineOnly = v end, 12, -170),
         -- right column
         mkCheck(pane, "Quest info on monsters and NPCs", function() return SFP.db.questMarkers ~= false end,
             function(v) if SFP.QuestMarkers then SFP.QuestMarkers:SetEnabled(v) end end, 260, -40),
@@ -201,9 +203,9 @@ local function buildSettings(pane)
         mkCheck(pane, "Chat message: mailbox / vendor gold", function() return SFP.db.incomeMessages ~= false end,
             function(v) SFP.db.incomeMessages = v end, 260, -144),
     }
-    mkButton(pane, "Show internal errors", 160, function() SFP:Print("see /sfp errors"); SFP:RunModule("SEVIATHSUSEFULTOOLS", "errors") end):SetPoint("TOPLEFT", 12, -185)
-    mkButton(pane, "Reload UI", 160, function() ReloadUI() end):SetPoint("TOPLEFT", 12, -215)
-    mkButton(pane, "About / options page", 160, function() SFP:OpenAbout() end):SetPoint("TOPLEFT", 12, -245)
+    mkButton(pane, "Show internal errors", 160, function() SFP:Print("see /sfp errors"); SFP:RunModule("SEVIATHSUSEFULTOOLS", "errors") end):SetPoint("TOPLEFT", 12, -210)
+    mkButton(pane, "Reload UI", 160, function() ReloadUI() end):SetPoint("TOPLEFT", 12, -240)
+    mkButton(pane, "About / options page", 160, function() SFP:OpenAbout() end):SetPoint("TOPLEFT", 12, -270)
     pane.refresh = function() for _, cb in ipairs(pane.checks) do cb.refresh() end end
 end
 

@@ -726,6 +726,9 @@ SlashCmdList["SEVIATHSUSEFULTOOLS"] = function(msg)
     elseif cmd == "learnall" then
         SFP.db.learnAll = (SFP.db.learnAll == false)
         SFP:Print("Learning everything constantly " .. (SFP.db.learnAll and "ON" or "OFF") .. " (saved to the addon folder with tools/watch_learned.py)")
+    elseif cmd == "comparelevel" then
+        SFP.db.compareMineOnly = not SFP.db.compareMineOnly
+        SFP:Print("Monster comparison: " .. (SFP.db.compareMineOnly and "my level and below only" or "all levels"))
     elseif cmd == "craft" then
         if SFP.PrintCraftProfit then SFP:PrintCraftProfit() end
     elseif cmd == "income" then

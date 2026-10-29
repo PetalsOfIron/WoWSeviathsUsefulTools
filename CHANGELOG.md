@@ -1,5 +1,8 @@
 # SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
 
+## 1.48.0-mop
+- Menu option "Compare monsters: my level and below only" (off = all levels); /sfp comparelevel switches it
+
 ## 1.47.1-mop
 - The comparison inside a creature type is no longer limited by level: all monsters of the type in the data are compared
 

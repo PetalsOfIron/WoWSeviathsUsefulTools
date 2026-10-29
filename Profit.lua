@@ -197,6 +197,7 @@ local function materialMobs()
 end
 
 local function knownMobs(typeName, lvl, excludeName, range)
+    local cap = SFP.db.compareMineOnly and (UnitLevel("player") or 999) or 999
     local subs = TYPE_SUBS[typeName]
     local out = {}
     if not (subs and lvl) then return out end
@@ -204,7 +205,7 @@ local function knownMobs(typeName, lvl, excludeName, range)
     if nameLevelState ~= 2 then return out end
     for nm, t in pairs(materialMobs()) do
         local lv = nameLevel[nm]
-        if lv and nm ~= excludeName and lv[1] <= lvl + range and lv[2] >= lvl - range then
+        if lv and nm ~= excludeName and lv[1] <= cap and lv[1] <= lvl + range and lv[2] >= lvl - range then
             local v = 0
             for sub in pairs(subs) do v = v + (t.v[sub] or 0) end
             if v > 0 then
@@ -221,11 +222,12 @@ end
 local function sameTypeAdvice(typeName, lvl, ownV, excludeId, add, ownName)
     if not typeName then return false end
     local list, usedRange
+    local cap = SFP.db.compareMineOnly and (UnitLevel("player") or 999) or 999
     for _, range in ipairs({ 999 }) do   -- every monster of the type, not limited by level
         local byName = {}
         for oid, o in pairs(SFP.db.npcs) do
             local ol = o.lmax or o.lmin
-            if oid ~= excludeId and o.t == typeName and o.d and (o.k or 0) >= 1 and (not lvl or not ol or math.abs(ol - lvl) <= range) then
+            if oid ~= excludeId and o.t == typeName and o.d and (o.k or 0) >= 1 and (not ol or ol <= cap) and (not lvl or not ol or math.abs(ol - lvl) <= range) then
                 local nm = o.n or ("NPC " .. oid)
                 local map = o.m and next(o.m)
                 byName[nm] = { name = nm, v = dropValue(o.d, o.k), lvl = ol, zone = map and SFP:ZoneName(map) or nil }
@@ -247,7 +249,7 @@ local function sameTypeAdvice(typeName, lvl, ownV, excludeId, add, ownName)
     table.sort(list, function(a, b) return a.v > b.v end)
     local best = list[1]
     local plural = typeName == "Undead" and typeName or typeName .. "s"
-    local scope = usedRange >= 999 and "all levels" or ("level " .. ((lvl or 0) - usedRange) .. "-" .. ((lvl or 0) + usedRange))
+    local scope = SFP.db.compareMineOnly and "your level and below" or usedRange >= 999 and "all levels" or ("level " .. ((lvl or 0) - usedRange) .. "-" .. ((lvl or 0) + usedRange))
     if best.v > ownV * 1.15 then
         local where = (best.zone and (best.zone .. ", ") or "") .. (best.lvl and ("lvl " .. best.lvl) or "")
         add("Best " .. typeName:lower() .. " to grind (" .. scope .. "): " .. best.name .. (where ~= "" and (" - " .. where) or "") .. " ~" .. money(best.v) .. " per kill", 1, 0.9, 0.3)
