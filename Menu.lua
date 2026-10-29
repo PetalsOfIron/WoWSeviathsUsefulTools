@@ -183,6 +183,8 @@ local function buildSettings(pane)
         mkCheck(pane, "Item and monster tooltip lines", function() return SFP.db.tooltip end, function(v) SFP.db.tooltip = v end, 12, -40),
         mkCheck(pane, "Quest info on monsters and NPCs (tooltip + head marks)", function() return SFP.db.questMarkers ~= false end,
             function(v) if SFP.QuestMarkers then SFP.QuestMarkers:SetEnabled(v) end end, 260, -40),
+        mkCheck(pane, "Quest areas on the minimap", function() return SFP.db.questMinimap ~= false end,
+            function(v) SFP.db.questMinimap = v; if SFP.QuestMarkers then SFP.QuestMarkers:Refresh() end end, 260, -92),
         mkCheck(pane, "Quest icons over monster heads", function() return SFP.db.questHeads ~= false end,
             function(v) SFP.db.questHeads = v; if SFP.QuestMarkers then SFP.QuestMarkers:Refresh() end end, 260, -66),
         mkCheck(pane, "Yellow chat message when an auction sells", function() return SFP.db.auctionSold ~= false end,

@@ -1,5 +1,8 @@
 # SeviathsUsefulTools changelog (formerly SeviathsFarmPack)
 
+## 1.36.0-mop
+- Minimap: the areas where your quest objectives are (kill / collect / use) and your hand-ins are drawn on the minimap again, retail-style translucent areas (menu: "Quest areas on the minimap"); the game's own marks are used for quest givers
+
 ## 1.35.0-mop
 - Faster auction scan: the whole auction house is read in one request (like other addons); the item-by-item search is only the fallback and waits less for items that are not listed
 

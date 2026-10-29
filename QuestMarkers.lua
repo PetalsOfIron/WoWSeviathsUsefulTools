@@ -923,9 +923,8 @@ local function mclear()
 end
 
 local function mupdate()
-    do return end   -- minimap markers removed
     local h = getHBD()
-    if not h or not Q.enabled or not SFP.db.questMinimap then mclear(); return end
+    if not h or not Q.enabled or SFP.db.questMinimap == false then mclear(); return end
     local mapID = C_Map.GetBestMapForUnit("player")
     local pos = mapID and C_Map.GetPlayerMapPosition(mapID, "player")
     local px, py
@@ -937,7 +936,8 @@ local function mupdate()
     local wanted, n = {}, 0
     for _, m in ipairs(markersOf(res)) do
         local dx, dy = m.x - px, m.y - py
-        if dx * dx + dy * dy < RANGE * RANGE then
+        -- only the quest areas (where to kill / collect) and hand-ins: the game shows quest givers itself
+        if (m.type == "obj" or m.type == "turnin") and dx * dx + dy * dy < RANGE * RANGE then
             n = n + 1
             if n > 70 then break end
             wanted[m.type .. m.q .. ":" .. m.ent .. ":" .. floor(m.x * 1000) .. ":" .. floor(m.y * 1000)] = m
@@ -1247,6 +1247,7 @@ function Q:Refresh()
         SFP:Safe("quest state", refreshState)
         SFP:Safe("quest sets", rebuildSets)
         SFP:Safe("quest heads", function() Q:UpdatePlates() end)
+        SFP:Safe("quest minimap", mupdate)
     end)
 end
 
@@ -1376,6 +1377,7 @@ SFP:OnLogin(function()
         acc = acc + dt
         if acc < 1 then return end
         acc = 0
+        if Q.enabled then SFP:Safe("quest minimap", mupdate) end
     end)
 
     if Q.enabled then
